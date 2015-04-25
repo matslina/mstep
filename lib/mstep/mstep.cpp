@@ -9,13 +9,12 @@ MStep::MStep(Grid *grid, Control *control, Display *display,
 }
 
 void MStep::run() {
-  char d[12];
+  bool d[128];
   int i = 0;
   while (!control->shutdownRequested()) {
     grid->draw(d);
-    sleep(1031);
-    d[i % 12] = 0x00;
-    i++;
-    d[i % 12] = i & 0xff;
+    sleep(200);
+    d[i] = !d[i] ;
+    i = (i + 1) % 128;
   }
 }

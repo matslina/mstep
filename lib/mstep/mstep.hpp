@@ -5,7 +5,7 @@ class Grid {
  public:
   virtual char *getEvents() = 0;
   virtual void clearEvents() = 0;
-  virtual void draw(char *grid) = 0;
+  virtual void draw(bool *state) = 0;
   virtual char getWidth() = 0;
   virtual char getHeight() = 0;
 };

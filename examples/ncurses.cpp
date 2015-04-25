@@ -33,6 +33,7 @@ public:
     this->cursorRow = 0;
     this->win = newwin(this->height, this->width, y, x);
     drawGrid();
+    curs_set(2);
     placeCursor(0, 0);
   }
 
@@ -42,14 +43,14 @@ public:
   void clearEvents() {
   }
 
-  void draw(char *grid) {
+  void draw(bool *state) {
     pthread_mutex_lock(mutex_curses);
 
     for (int i = 0; i < width * height; i++) {
       mvwaddch(win,
 	       (i / columns) * 2 + 1,
 	       (i % columns) * 2 + 1,
-	       grid[i / 8] >> (i % 8) ? 'X' : ' ');
+	       state[i] ? ACS_DIAMOND : ' ');
     }
     pthread_mutex_unlock(mutex_curses);
     placeCursor(cursorRow, cursorColumn);
