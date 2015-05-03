@@ -3,6 +3,7 @@
 #include <curses.h>
 #include <pthread.h>
 #include <time.h>
+#include <sys/time.h>
 #include <mstep.hpp>
 
 
@@ -22,6 +23,8 @@ public:
   int cursorRow;
   int cursorColumn;
   pthread_mutex_t *mutex_curses;
+  int pressedRow;
+  int pressedColumn;
 
   CursesGrid(pthread_mutex_t *mutex_curses, int x, int y, int rows, int columns) {
     this->mutex_curses = mutex_curses;
@@ -31,26 +34,33 @@ public:
     this->height = rows * 2 + 1;
     this->cursorColumn = 0;
     this->cursorRow = 0;
+    this->pressedRow = -1;
+    this->pressedColumn = -1;
     this->win = newwin(this->height, this->width, y, x);
     drawGrid();
     curs_set(2);
     placeCursor(0, 0);
   }
 
-  char *getEvents() {
+  bool eventPress(char *row, char *column) {
+    if (pressedRow >= 0) {
+      *row = pressedRow;
+      *column = pressedColumn;
+      pressedRow = -1;
+      pressedColumn = -1;
+      return true;
+    }
+    return false;
   }
 
-  void clearEvents() {
-  }
-
-  void draw(bool *state) {
+  void draw(char *state) {
     pthread_mutex_lock(mutex_curses);
 
     for (int i = 0; i < width * height; i++) {
       mvwaddch(win,
 	       (i / columns) * 2 + 1,
 	       (i % columns) * 2 + 1,
-	       state[i] ? ACS_DIAMOND : ' ');
+	       state[i / 8] & (1 << (i % 8)) ? ACS_DIAMOND : ' ');
     }
     pthread_mutex_unlock(mutex_curses);
     placeCursor(cursorRow, cursorColumn);
@@ -79,6 +89,11 @@ public:
 
   void moveDown() {
     placeCursor(cursorRow + 1, cursorColumn);
+  }
+
+  void press() {
+    pressedRow = cursorRow;
+    pressedColumn = cursorColumn;
   }
 
 private:
@@ -138,25 +153,35 @@ public:
 
 class CursesControl : public Control {
 public:
-  bool shutdown;
+  bool shutdownRequested;
+  bool playPauseRequested;
 
   CursesControl() {
-    shutdown = false;
+    shutdownRequested = false;
+    playPauseRequested = false;
   }
 
-  int getButtonEvents() {
-    return 0;
+  bool eventShutdown() {
+    return returnAndClear(&shutdownRequested);
   }
 
-  void clearButtonEvents() {
+  bool eventPlayPause() {
+    return returnAndClear(&playPauseRequested);
   }
 
-  bool shutdownRequested() {
-    return shutdown;
+  void shutdown() {
+    shutdownRequested = true;
   }
 
-  void stop() {
-    shutdown = true;
+  void playPause() {
+    playPauseRequested = true;
+  }
+
+private:
+  bool returnAndClear(bool *what) {
+    bool ret = *what;
+    *what = false;
+    return ret;
   }
 };
 
@@ -170,6 +195,21 @@ void sleepms(unsigned long milliseconds) {
   req.tv_sec = milliseconds / 1000;
   req.tv_nsec = (milliseconds % 1000) * 1000000;
   nanosleep(&req, NULL);
+}
+
+unsigned long timems() {
+  struct timeval now;
+  static struct timeval *start = NULL;
+
+  if (!start) {
+    start = (struct timeval *)malloc(sizeof(struct timeval));
+    gettimeofday(start, NULL);
+  }
+
+  gettimeofday(&now, NULL);
+
+  return ((now.tv_sec - start->tv_sec) * 1000 +
+	  ((signed long)now.tv_usec - (signed long)start->tv_usec) / 1000);
 }
 
 void *mstep_run(void *mstep) {
@@ -200,7 +240,7 @@ int uiloop(int grid_rows, int grid_columns) {
   grid = new CursesGrid(&mutex_curses, 1, display->height + 1,
 			grid_rows, grid_columns);
   control = new CursesControl();
-  mstep = new MStep(grid, control, display, sleepms);
+  mstep = new MStep(grid, control, display, sleepms, timems);
 
   pthread_create(&thread_mstep, NULL, mstep_run, mstep);
 
@@ -209,13 +249,18 @@ int uiloop(int grid_rows, int grid_columns) {
     int c =  getch();
     pthread_mutex_unlock(&mutex_curses);
 
-    if (c == 'q' || c == 'Q')
+    if (c == 'q' || c == 'Q') {
+      control->shutdown();
       break;
+    }
 
     switch (c) {
+      // no key pressed: sleep and check again
     case ERR:
       sleepms(10);
       break;
+
+      // arrow keys move grid cursor
     case KEY_DOWN:
       grid->moveDown();
       break;
@@ -228,13 +273,22 @@ int uiloop(int grid_rows, int grid_columns) {
     case KEY_RIGHT:
       grid->moveRight();
       break;
+
+    case 'p':
+    case 'P':
+      control->playPause();
+      break;
+
+    case ' ':
+      grid->press();
+      break;
+
     default:
       break;
     }
 
   }
 
-  control->shutdown = true;
   pthread_join(thread_mstep, NULL);
   pthread_mutex_destroy(&mutex_curses);
   delete display;

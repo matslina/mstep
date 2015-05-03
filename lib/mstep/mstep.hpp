@@ -3,9 +3,8 @@
 
 class Grid {
  public:
-  virtual char *getEvents() = 0;
-  virtual void clearEvents() = 0;
-  virtual void draw(bool *state) = 0;
+  virtual bool eventPress(char *row, char *column) = 0;
+  virtual void draw(char *state) = 0;
   virtual char getWidth() = 0;
   virtual char getHeight() = 0;
 };
@@ -14,9 +13,8 @@ class Grid {
 
 class Control {
  public:
-  virtual int getButtonEvents() = 0;
-  virtual void clearButtonEvents() = 0;
-  virtual bool shutdownRequested() = 0;
+  virtual bool eventShutdown() = 0;
+  virtual bool eventPlayPause() = 0;
 };
 
 class Display {
@@ -27,15 +25,28 @@ class Display {
 class MStep {
 public:
   MStep(Grid *grid, Control *control, Display *display,
-	void (*sleep)(unsigned long));
+	void (*sleep)(unsigned long),
+	unsigned long (*time)(void));
   void run();
 
 private:
   Grid *grid;
   Control *control;
   Display *display;
+  char *sequence;
+  char *gridState;
+  char *gridOverlay;
+  char *gridBuf;
+  char gridStateSize;
+  char gridWidth;
+  char gridHeight;
+  int numPads;
   void (*sleep)(unsigned long);
-
+  unsigned long (*time)(void);
+  void displayStartupSequence();
+  void draw();
+  void overlayHline(char column);
+  void overlayClear();
 };
 
 #endif
