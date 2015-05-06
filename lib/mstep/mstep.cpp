@@ -28,6 +28,7 @@ void MStep::run() {
   unsigned long playNext;
 
   // displayStartupSequence();
+  draw();
 
   while (!control->eventShutdown()) {
 
