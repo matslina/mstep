@@ -126,6 +126,11 @@ private:
   }
 };
 
+class CursesMIDI : public MIDI {
+  void noteOn(int channel, int note, int velocity) {
+  }
+};
+
 class CursesDisplay : public Display {
 public:
   WINDOW *win;
@@ -218,6 +223,7 @@ void *mstep_run(void *mstep) {
 
 int uiloop(int grid_rows, int grid_columns) {
   CursesGrid *grid;
+  CursesMIDI *midi;
   CursesDisplay *display;
   CursesControl *control;
   MStep *mstep;
@@ -237,10 +243,11 @@ int uiloop(int grid_rows, int grid_columns) {
   box(stdscr, 0, 0);
   refresh();
   display = new CursesDisplay(&mutex_curses, 1, 1, 4, 16);
+  midi = new CursesMIDI();
   grid = new CursesGrid(&mutex_curses, 1, display->height + 1,
 			grid_rows, grid_columns);
   control = new CursesControl();
-  mstep = new MStep(grid, control, display, sleepms, timems);
+  mstep = new MStep(grid, control, display, midi, sleepms, timems);
 
   pthread_create(&thread_mstep, NULL, mstep_run, mstep);
 

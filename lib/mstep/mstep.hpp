@@ -9,7 +9,10 @@ class Grid {
   virtual char getHeight() = 0;
 };
 
-
+class MIDI {
+public:
+  virtual void noteOn(int channel, int note, int velocity) = 0;
+};
 
 class Control {
  public:
@@ -24,7 +27,7 @@ class Display {
 
 class MStep {
 public:
-  MStep(Grid *grid, Control *control, Display *display,
+  MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
 	void (*sleep)(unsigned long),
 	unsigned long (*time)(void));
   void run();
@@ -33,6 +36,7 @@ private:
   Grid *grid;
   Control *control;
   Display *display;
+  MIDI *midi;
   char *sequence;
   char *gridState;
   char *gridOverlay;

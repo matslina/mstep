@@ -1,12 +1,13 @@
 #include <stdlib.h>
 #include "mstep.hpp"
 
-MStep::MStep(Grid *grid, Control *control, Display *display,
+MStep::MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
 	     void (*sleep)(unsigned long),
 	     unsigned long (*time)(void)) {
   this->grid = grid;
   this->control = control;
   this->display = display;
+  this->midi = midi;
   this->sleep = sleep;
   this->time = time;
   this->gridWidth = grid->getWidth();
