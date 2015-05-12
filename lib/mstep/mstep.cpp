@@ -57,6 +57,12 @@ void MStep::run() {
 	playColumn = -1;
 	overlayClear();
 	draw();
+	for (int i = 0; i < gridHeight; i ++) {
+	  if (activeNotes[i] >= 0) {
+	    midi->noteOn(0, activeNotes[i], 0);
+	    activeNotes[i] = -1;
+	  }
+	}
       }
     }
 
