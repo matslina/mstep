@@ -63,7 +63,7 @@ void MStep::run() {
     if (playColumn >= 0 && playNext <= time()) {
       playColumn = (playColumn + 1) % gridWidth;
       play(playColumn);
-      playNext += 500;
+      playNext += 125;
       overlayHline(playColumn);
       draw();
     }
