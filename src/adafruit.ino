@@ -66,7 +66,13 @@ class AdaGrid : public Grid {
 };
 
 class AdaMIDI : public MIDI {
-  void noteOn(int channel, int note, int velocity) {}
+
+  void noteOn(int channel, int note, int velocity) {
+    Serial1.write((unsigned char)(0x90 | channel));
+    Serial1.write((unsigned char)note);
+    Serial1.write((unsigned char)velocity);
+  }
+
 };
 
 class AdaControl : public Control {
@@ -115,14 +121,12 @@ AdaMIDI midi = AdaMIDI();
 MStep mstep = MStep(&grid, &control, &display, &midi, &delay, &millis);
 
 void setup() {
-  Serial.begin(9600);
+  Serial1.begin(31250);
   pinMode(PIN_PLAYPAUSE, INPUT);
   trellis.begin(0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77);
 }
 
 void loop() {
-  Serial.print("Starting MStep\n");
   mstep.run();
-  Serial.print("Stopped MStep\n");
   delay(1000);
 }
