@@ -37,14 +37,14 @@ private:
   Control *control;
   Display *display;
   MIDI *midi;
-  char *sequence;
+  char *buf;
   char *gridState;
   char *gridOverlay;
   char *gridBuf;
+  char *activeNotes;
   char gridStateSize;
   char gridWidth;
   char gridHeight;
-  char *activeNotes;
   int numPads;
   void (*sleep)(unsigned long);
   unsigned long (*time)(void);

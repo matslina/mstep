@@ -10,23 +10,30 @@ MStep::MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
   this->midi = midi;
   this->sleep = sleep;
   this->time = time;
-  this->gridWidth = grid->getWidth();
-  this->gridHeight = grid->getHeight();
-  this->numPads = gridWidth * gridHeight;
-  this->gridStateSize = (((gridWidth * gridHeight) / 8) +
-			 ((gridWidth * gridHeight) % 8 ? 1 : 0));
-  this->gridState = (char *)malloc(gridStateSize * 3);
-  this->gridOverlay = gridState + gridStateSize;
-  this->gridBuf = gridState + gridStateSize * 2;
-  this->activeNotes = (char *)malloc(gridHeight);
-  for (int i = 0; i < gridStateSize * 3; i++)
-    gridState[i] = 0;
-  for (int i = 0; i < gridHeight; i++)
-    activeNotes[i] = -1;
+
+  gridWidth = grid->getWidth();
+  gridHeight = grid->getHeight();
+
+  numPads = gridWidth * gridHeight;
+  gridStateSize = ((numPads / 8) +
+		   (numPads % 8 ? 1 : 0));
+
+  buf = (char *)malloc(gridStateSize +
+		       gridStateSize +
+		       gridStateSize +
+		       gridHeight);
+  gridState   = buf;
+  gridOverlay = buf + gridStateSize;
+  gridBuf     = buf + gridStateSize * 2;
+  activeNotes = buf + gridStateSize * 3;
+  for (int i = 0; i < gridStateSize; i++) gridState[i] = 0;
+  for (int i = 0; i < gridStateSize; i++) gridOverlay[i] = 0;
+  for (int i = 0; i < gridStateSize; i++) gridBuf[i] = 0;
+  for (int i = 0; i < gridHeight; i++) activeNotes[i] = -1;
 }
 
 void MStep::run() {
-  char r, c, pad;
+  char row, column, pad;
   char playColumn = -1;
   unsigned long playNext;
 
@@ -35,8 +42,8 @@ void MStep::run() {
 
   while (!control->eventShutdown()) {
 
-    while (grid->eventPress(&r, &c)) {
-      pad = r * gridWidth + c;
+    while (grid->eventPress(&row, &column)) {
+      pad = row * gridWidth + column;
       gridState[pad >> 3] ^= 1 << (pad & 0x7);
       draw();
     }
