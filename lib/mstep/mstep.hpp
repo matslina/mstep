@@ -44,6 +44,7 @@ private:
   char gridStateSize;
   char gridWidth;
   char gridHeight;
+  char *activeNotes;
   int numPads;
   void (*sleep)(unsigned long);
   unsigned long (*time)(void);
@@ -51,6 +52,7 @@ private:
   void draw();
   void overlayHline(char column);
   void overlayClear();
+  void play(char column);
 };
 
 #endif

@@ -4,6 +4,8 @@
 #include <pthread.h>
 #include <time.h>
 #include <sys/time.h>
+#include <vector>
+#include <algorithm>
 #include <mstep.hpp>
 
 
@@ -12,6 +14,8 @@
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+
+using namespace std;
 
 class CursesGrid : public Grid {
 public:
@@ -127,7 +131,52 @@ private:
 };
 
 class CursesMIDI : public MIDI {
+public:
+  WINDOW *win;
+  pthread_mutex_t *mutex_curses;
+  int rows;
+  vector<char> *active;
+
+  CursesMIDI(pthread_mutex_t *mutex_curses, int x, int y, int rows) {
+    this->mutex_curses = mutex_curses;
+    this->rows = rows;
+    this->win = newwin(this->rows, 40, y, x);
+    this->active = new vector<char>();
+    box(this->win, 0, 0);
+    mvwaddstr(this->win, 0, 2, "MIDI");
+    wrefresh(win);
+  }
+
   void noteOn(int channel, int note, int velocity) {
+    const char *notestr[] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
+    char buf[100];
+
+    if (velocity == 0) {
+      for (int i = 0; i < active->size(); i++)
+	if (active->at(i) == note) {
+	  active->erase(active->begin() + i);
+	}
+    } else {
+      active->push_back(note);
+      sort(active->begin(), active->end());
+    }
+
+    werase(win);
+    box(this->win, 0, 0);
+    mvwaddstr(this->win, 0, 2, "MIDI");
+
+    for (int i = 0; i < MIN(active->size(), rows - 2); i++) {
+      note = active->at(i);
+      sprintf(buf, "[%d] %s%d (%d)",
+	      channel,
+	      notestr[active->at(i) % 12],
+	      active->at(i) / 12,
+	      127);
+      mvwaddstr(this->win, 1 + i, 1, buf);
+    }
+    if (active->size() > rows - 2)
+      mvwaddstr(this->win, rows - 1, 2, "<more>");
+    wrefresh(win);
   }
 };
 
@@ -243,10 +292,10 @@ int uiloop(int grid_rows, int grid_columns) {
   box(stdscr, 0, 0);
   refresh();
   display = new CursesDisplay(&mutex_curses, 1, 1, 4, 16);
-  midi = new CursesMIDI();
   grid = new CursesGrid(&mutex_curses, 1, display->height + 1,
 			grid_rows, grid_columns);
   control = new CursesControl();
+  midi = new CursesMIDI(&mutex_curses, 1, display->height + grid->height + 1, 10);
   mstep = new MStep(grid, control, display, midi, sleepms, timems);
 
   pthread_create(&thread_mstep, NULL, mstep_run, mstep);
