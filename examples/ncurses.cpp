@@ -19,14 +19,14 @@ using namespace std;
 
 class CursesGrid : public Grid {
 public:
+  WINDOW *win;
+  pthread_mutex_t *mutex_curses;
   char rows;
   char columns;
   char width;
   char height;
-  WINDOW *win;
   int cursorRow;
   int cursorColumn;
-  pthread_mutex_t *mutex_curses;
   int pressedRow;
   int pressedColumn;
 
@@ -41,10 +41,13 @@ public:
     this->pressedRow = -1;
     this->pressedColumn = -1;
     this->win = newwin(this->height, this->width, y, x);
-    drawGrid();
     curs_set(2);
     placeCursor(0, 0);
   }
+
+  //
+  // Implementations of MStep methods
+  //
 
   bool eventPress(char *row, char *column) {
     if (pressedRow >= 0) {
@@ -68,7 +71,6 @@ public:
     }
     pthread_mutex_unlock(mutex_curses);
     placeCursor(cursorRow, cursorColumn);
-
   }
 
   char getWidth() {
@@ -79,20 +81,13 @@ public:
     return rows;
   }
 
-  void moveRight() {
-    placeCursor(cursorRow, cursorColumn + 1);
-  }
+  //
+  // Methods specific to the ncurses grid
+  //
 
-  void moveLeft() {
-    placeCursor(cursorRow, cursorColumn - 1);
-  }
-
-  void moveUp() {
-    placeCursor(cursorRow - 1, cursorColumn);
-  }
-
-  void moveDown() {
-    placeCursor(cursorRow + 1, cursorColumn);
+  void move(int updown, int leftright) {
+    placeCursor(MAX(0, MIN(rows, cursorRow + updown)),
+		MAX(0, MIN(columns, cursorColumn + leftright)));
   }
 
   void press() {
@@ -101,23 +96,20 @@ public:
   }
 
 private:
-  void placeCursor(int r, int c) {
-    cursorRow = MAX(0, MIN(rows - 1, r));
-    cursorColumn = MAX(0, MIN(columns - 1, c));
-    pthread_mutex_lock(mutex_curses);
-    wmove(win, 1 + cursorRow * 2, 1 + 2 * cursorColumn);
-    wrefresh(win);
-    pthread_mutex_unlock(mutex_curses);
-  }
 
-  void drawGrid() {
+  void placeCursor(int r, int c) {
+    pthread_mutex_lock(mutex_curses);
     box(win, 0, 0);
+
+    // Horizontal lines
     for (int i = 2; i < width - 2; i += 2) {
       wmove(win, 1, i);
       wvline(win, ACS_VLINE, height - 2);
       mvwaddch(win, 0, i, ACS_TTEE);
       mvwaddch(win, height - 1, i, ACS_BTEE);
     }
+
+    // Vertical lines
     for (int i = 2; i < height - 2; i += 2) {
       wmove(win, i, 1);
       whline(win, ACS_HLINE, width - 2);
@@ -126,7 +118,14 @@ private:
       for (int j = 2; j < width - 2; j += 2)
 	mvwaddch(win, i, j, ACS_PLUS);
     }
+
+    // Cursor placement
+    cursorRow = MAX(0, MIN(rows - 1, r));
+    cursorColumn = MAX(0, MIN(columns - 1, c));
+    wmove(win, 1 + cursorRow * 2, 1 + 2 * cursorColumn);
+
     wrefresh(win);
+    pthread_mutex_unlock(mutex_curses);
   }
 };
 
@@ -183,11 +182,11 @@ public:
 class CursesDisplay : public Display {
 public:
   WINDOW *win;
+  pthread_mutex_t *mutex_curses;
   int width;
   int height;
   int rows;
   int columns;
-  pthread_mutex_t *mutex_curses;
 
   CursesDisplay(pthread_mutex_t *mutex_curses, int x, int y, int rows, int columns) {
     this->mutex_curses = mutex_curses;
@@ -318,16 +317,16 @@ int uiloop(int grid_rows, int grid_columns) {
 
       // arrow keys move grid cursor
     case KEY_DOWN:
-      grid->moveDown();
+      grid->move(1, 0);
       break;
     case KEY_UP:
-      grid->moveUp();
+      grid->move(-1, 0);
       break;
     case KEY_LEFT:
-      grid->moveLeft();
+      grid->move(0, -1);
       break;
     case KEY_RIGHT:
-      grid->moveRight();
+      grid->move(0, 1);
       break;
 
     case 'p':
@@ -369,11 +368,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  //CursesGrid grid = Grid();
-
-
   uiloop(height, width);
-
 
   return 0;
 }
