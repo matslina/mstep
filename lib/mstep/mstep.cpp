@@ -33,9 +33,10 @@ MStep::MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
 }
 
 void MStep::run() {
-  char row, column, pad;
+  char row, column;
   char playColumn = -1;
   unsigned long playNext;
+  int pad;
 
   // displayStartupSequence();
   draw();
