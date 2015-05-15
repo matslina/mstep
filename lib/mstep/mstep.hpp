@@ -25,6 +25,13 @@ class Display {
   virtual void write() = 0;
 };
 
+typedef struct pattern_s {
+  char *grid;
+  char *note;
+  char *velocity;
+  char *active;
+} pattern_t;
+
 class MStep {
 public:
   MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
@@ -38,10 +45,10 @@ private:
   Display *display;
   MIDI *midi;
   char *buf;
-  char *gridState;
+  pattern_t *pattern;
+  int activePattern;
   char *gridOverlay;
   char *gridBuf;
-  char *activeNotes;
   char gridStateSize;
   char gridWidth;
   char gridHeight;

@@ -18,18 +18,39 @@ MStep::MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
   gridStateSize = ((numPads / 8) +
 		   (numPads % 8 ? 1 : 0));
 
-  buf = (char *)malloc(gridStateSize +
-		       gridStateSize +
-		       gridStateSize +
-		       gridHeight);
-  gridState   = buf;
-  gridOverlay = buf + gridStateSize;
-  gridBuf     = buf + gridStateSize * 2;
-  activeNotes = buf + gridStateSize * 3;
-  for (int i = 0; i < gridStateSize; i++) gridState[i] = 0;
+  // this is a bit unwieldy, but helps track memory consumption
+  buf = (char *)malloc(gridStateSize + // gridOverlay
+		       gridStateSize + // gridBuf
+		       gridHeight * sizeof(pattern_t) + // patterns
+		       gridHeight * (gridStateSize + // pattern grids
+				     gridHeight + // pattern notes
+				     gridHeight + // pattern velocities
+				     gridHeight)); // pattern active notes
+
+  // assign pointers
+  gridOverlay = buf;
+  gridBuf     = buf + gridStateSize;
+  pattern = (pattern_t *)(buf + gridStateSize * 2);
+  char *tmpp = buf + gridStateSize * 2 + gridHeight * sizeof(pattern_t);
+  for (int i = 0; i < gridHeight; i++) {
+    pattern[i].grid = tmpp;
+    pattern[i].note = tmpp + gridStateSize;
+    pattern[i].velocity = tmpp + gridStateSize + gridHeight;
+    pattern[i].active = tmpp + gridStateSize + gridHeight * 2;
+    tmpp += gridStateSize + gridHeight * 3;
+  }
+
+  // initialize. this should load from eeprom or use a default.
   for (int i = 0; i < gridStateSize; i++) gridOverlay[i] = 0;
   for (int i = 0; i < gridStateSize; i++) gridBuf[i] = 0;
-  for (int i = 0; i < gridHeight; i++) activeNotes[i] = -1;
+  for (int i = 0; i < gridHeight; i++) {
+    for (int j = 0; j < gridStateSize; j++) pattern[i].grid[j] = 0;
+    for (int j = 0; j < gridHeight; j++) pattern[i].note[j] = 36 + j;
+    for (int j = 0; j < gridHeight; j++) pattern[i].velocity[j] = 127;
+    for (int j = 0; j < gridHeight; j++) pattern[i].active[j] = -1;
+  }
+
+  activePattern = 0;
 }
 
 void MStep::run() {
@@ -45,7 +66,7 @@ void MStep::run() {
 
     while (grid->eventPress(&row, &column)) {
       pad = row * gridWidth + column;
-      gridState[pad >> 3] ^= 1 << (pad & 0x7);
+      pattern[activePattern].grid[pad >> 3] ^= 1 << (pad & 0x7);
       draw();
     }
 
@@ -58,9 +79,9 @@ void MStep::run() {
 	overlayClear();
 	draw();
 	for (int i = 0; i < gridHeight; i ++) {
-	  if (activeNotes[i] >= 0) {
-	    midi->noteOn(0, activeNotes[i], 0);
-	    activeNotes[i] = -1;
+	  if (pattern[activePattern].active[i] >= 0) {
+	    midi->noteOn(0, pattern[activePattern].active[i], 0);
+	    pattern[activePattern].active[i] = -1;
 	  }
 	}
       }
@@ -80,24 +101,28 @@ void MStep::run() {
 
 void MStep::play(char column) {
   int pad;
+  char *grid = pattern[activePattern].grid;
+  char *note = pattern[activePattern].note;
+  char *velocity = pattern[activePattern].velocity;
+  char *active = pattern[activePattern].active;
 
   for (int i = 0; i < gridHeight; i ++) {
-    if (activeNotes[i] >= 0) {
-      midi->noteOn(1, activeNotes[i], 0);
-      activeNotes[i] = -1;
+    if (active[i] >= 0) {
+      midi->noteOn(9, active[i], 0);
+      active[i] = -1;
     }
 
     pad = i * gridWidth + column;
-    if (gridState[pad / 8] & (1 << (pad % 8))) {
-      midi->noteOn(1, 60 + i, 127);
-      activeNotes[i] = 60 + i;
+    if (grid[pad / 8] & (1 << (pad % 8))) {
+      midi->noteOn(9, note[i], velocity[i]);
+      active[i] = 36 + i;
     }
   }
 }
 
 void MStep::draw() {
   for (int i = 0; i < gridStateSize; i++)
-    gridBuf[i] = gridState[i] ^ gridOverlay[i];
+    gridBuf[i] = pattern[activePattern].grid[i] ^ gridOverlay[i];
   grid->draw(gridBuf);
 }
 
@@ -114,15 +139,4 @@ void MStep::overlayHline(char column) {
 }
 
 void MStep::displayStartupSequence() {
-  for (int i = 0; i < gridStateSize; i++)
-    gridState[i] = 0x55 << (i & 1);
-  for (int rounds = 1; rounds < 100; rounds++) {
-    grid->draw(gridState);
-    for (int i = 0; i < gridStateSize; i++)
-      gridState[i] ^= 0xff;
-    sleep(500 / rounds);
-  }
-  for (int i = 0; i < gridStateSize; i++)
-    gridState[i] = 0x00;
-    grid->draw(gridState);
 }
