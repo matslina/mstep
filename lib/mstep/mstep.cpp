@@ -69,7 +69,7 @@ void MStep::run() {
     if (event & Control::QUIT)
       break;
 
-    while (grid->eventPress(&row, &column)) {
+    while (grid->getPress(&row, &column)) {
       pad = row * gridWidth + column;
       pattern[activePattern].grid[pad >> 3] ^= 1 << (pad & 0x7);
       draw();

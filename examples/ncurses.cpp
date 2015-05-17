@@ -49,7 +49,7 @@ public:
   // Implementations of MStep methods
   //
 
-  bool eventPress(char *row, char *column) {
+  bool getPress(char *row, char *column) {
     if (pressedRow >= 0) {
       *row = pressedRow;
       *column = pressedColumn;

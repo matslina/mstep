@@ -3,7 +3,7 @@
 
 class Grid {
  public:
-  virtual bool eventPress(char *row, char *column) = 0;
+  virtual bool getPress(char *row, char *column) = 0;
   virtual void draw(char *state) = 0;
   virtual char getWidth() = 0;
   virtual char getHeight() = 0;
