@@ -209,32 +209,28 @@ public:
   pthread_mutex_t *mutex_curses;
   int x;
   int y;
-  bool shutdownRequested;
-  bool playPauseRequested;
+  int event;
 
   CursesControl(pthread_mutex_t *mutex_curses, int x, int y) {
     this->mutex_curses = mutex_curses;
     this->x = x;
     this->y = y;
-    shutdownRequested = false;
-    playPauseRequested = false;
+    event = 0;
     mvaddstr(y + 1, x, "[P]lay");
     mvaddstr(y + 2, x, "[N]ote");
     mvaddstr(y + 3, x, "[Q]uit");
     refresh();
   }
 
-  bool eventShutdown() {
-    return returnAndClear(&shutdownRequested);
+  int getEvent() {
+    int ret = event;
+    event = 0;
+    return ret;
   }
 
-  bool eventPlayPause() {
-    return returnAndClear(&playPauseRequested);
-  }
-
-  void indicatePlayPause(bool active) {
+  void indicate(int event) {
     pthread_mutex_lock(mutex_curses);
-    if (active) {
+    if (event & PLAY) {
       attron(A_BOLD);
       mvaddstr(y + 1, x, "[P]lay");
       attroff(A_BOLD);
@@ -246,11 +242,11 @@ public:
   }
 
   void shutdown() {
-    shutdownRequested = true;
+    event |= QUIT;
   }
 
   void playPause() {
-    playPauseRequested = true;
+    event |= PLAY;
   }
 
 private:

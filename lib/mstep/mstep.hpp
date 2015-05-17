@@ -16,9 +16,12 @@ public:
 
 class Control {
  public:
-  virtual void indicatePlayPause(bool active) = 0;
-  virtual bool eventShutdown() = 0;
-  virtual bool eventPlayPause() = 0;
+  enum Event {
+    PLAY = 1,
+    QUIT = 2,
+  };
+  virtual void indicate(int event) = 0;
+  virtual int getEvent() = 0;
 };
 
 class Display {

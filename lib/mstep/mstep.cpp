@@ -58,11 +58,16 @@ void MStep::run() {
   char playColumn = -1;
   unsigned long playNext;
   int pad;
+  int event;
 
   // displayStartupSequence();
   draw();
 
-  while (!control->eventShutdown()) {
+  while (1) {
+    event = control->getEvent();
+
+    if (event & Control::QUIT)
+      break;
 
     while (grid->eventPress(&row, &column)) {
       pad = row * gridWidth + column;
@@ -70,11 +75,11 @@ void MStep::run() {
       draw();
     }
 
-    if (control->eventPlayPause()) {
+    if (event & Control::PLAY) {
       if (playColumn < 0) {
 	playColumn = gridWidth - 1;
 	playNext = time();
-	control->indicatePlayPause(true);
+	control->indicate(Control::PLAY);
       } else {
 	playColumn = -1;
 	overlayClear();
@@ -85,7 +90,7 @@ void MStep::run() {
 	    pattern[activePattern].active[i] = -1;
 	  }
 	}
-	control->indicatePlayPause(false);
+	control->indicate(0);
       }
     }
 
