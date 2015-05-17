@@ -206,12 +206,22 @@ public:
 
 class CursesControl : public Control {
 public:
+  pthread_mutex_t *mutex_curses;
+  int x;
+  int y;
   bool shutdownRequested;
   bool playPauseRequested;
 
-  CursesControl() {
+  CursesControl(pthread_mutex_t *mutex_curses, int x, int y) {
+    this->mutex_curses = mutex_curses;
+    this->x = x;
+    this->y = y;
     shutdownRequested = false;
     playPauseRequested = false;
+    mvaddstr(y + 1, x, "[P]lay");
+    mvaddstr(y + 2, x, "[N]ote");
+    mvaddstr(y + 3, x, "[Q]uit");
+    refresh();
   }
 
   bool eventShutdown() {
@@ -220,6 +230,19 @@ public:
 
   bool eventPlayPause() {
     return returnAndClear(&playPauseRequested);
+  }
+
+  void indicatePlayPause(bool active) {
+    pthread_mutex_lock(mutex_curses);
+    if (active) {
+      attron(A_BOLD);
+      mvaddstr(y + 1, x, "[P]lay");
+      attroff(A_BOLD);
+    } else {
+      mvaddstr(y + 1, x, "[P]lay");
+    }
+    refresh();
+    pthread_mutex_unlock(mutex_curses);
   }
 
   void shutdown() {
@@ -293,7 +316,7 @@ int uiloop(int grid_rows, int grid_columns) {
   display = new CursesDisplay(&mutex_curses, 1, 1, 4, 16);
   grid = new CursesGrid(&mutex_curses, 1, display->height + 1,
 			grid_rows, grid_columns);
-  control = new CursesControl();
+  control = new CursesControl(&mutex_curses, display->width + 1, 1);
   midi = new CursesMIDI(&mutex_curses, 1, display->height + grid->height + 1, 10);
   mstep = new MStep(grid, control, display, midi, sleepms, timems);
 

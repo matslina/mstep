@@ -16,6 +16,7 @@ public:
 
 class Control {
  public:
+  virtual void indicatePlayPause(bool active) = 0;
   virtual bool eventShutdown() = 0;
   virtual bool eventPlayPause() = 0;
 };

@@ -74,6 +74,7 @@ void MStep::run() {
       if (playColumn < 0) {
 	playColumn = gridWidth - 1;
 	playNext = time();
+	control->indicatePlayPause(true);
       } else {
 	playColumn = -1;
 	overlayClear();
@@ -84,6 +85,7 @@ void MStep::run() {
 	    pattern[activePattern].active[i] = -1;
 	  }
 	}
+	control->indicatePlayPause(false);
       }
     }
 
