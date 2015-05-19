@@ -16,9 +16,13 @@ public:
 
 class Control {
  public:
-  enum Event {
+  enum {
     PLAY = 1,
     QUIT = 2,
+    NOTE = 4,
+    UP = 8,
+    DOWN = 16,
+    SELECT = 32,
   };
   virtual void indicate(int event) = 0;
   virtual int getEvent() = 0;

@@ -1,6 +1,9 @@
 #include <stdlib.h>
 #include "mstep.hpp"
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
 MStep::MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
 	     void (*sleep)(unsigned long),
 	     unsigned long (*time)(void)) {
@@ -59,6 +62,9 @@ void MStep::run() {
   unsigned long playNext;
   int pad;
   int event;
+  bool noteActive = false;
+  int noteRow = -1;
+  int noteValue;
 
   // displayStartupSequence();
   draw();
@@ -69,10 +75,37 @@ void MStep::run() {
     if (event & Control::QUIT)
       break;
 
-    while (grid->getPress(&row, &column)) {
-      pad = row * gridWidth + column;
-      pattern[activePattern].grid[pad >> 3] ^= 1 << (pad & 0x7);
-      draw();
+    if (event & Control::NOTE) {
+      if (!noteActive) {
+	control->indicate(Control::NOTE | (playColumn < 0 ? 0 : Control::PLAY));
+	noteRow = -1;
+	noteActive = true;
+      } else {
+	control->indicate(playColumn < 0 ? 0 : Control::PLAY);
+	noteActive = false;
+      }
+    }
+
+    if (noteActive) {
+      while (grid->getPress(&row, &column))
+	noteRow = row;
+
+      if (noteRow >= 0) {
+	noteValue = pattern[activePattern].note[noteRow];
+	if (event & Control::UP)
+	  noteValue = MIN(127, noteValue + 1);
+	if (event & Control::DOWN)
+	  noteValue = MAX(0, noteValue - 1);
+	pattern[activePattern].note[noteRow] = noteValue;
+      }
+    }
+
+    if (!noteActive) {
+      while (grid->getPress(&row, &column)) {
+	pad = row * gridWidth + column;
+	pattern[activePattern].grid[pad >> 3] ^= 1 << (pad & 0x7);
+	draw();
+      }
     }
 
     if (event & Control::PLAY) {
@@ -98,6 +131,7 @@ void MStep::run() {
       playColumn = (playColumn + 1) % gridWidth;
       play(playColumn);
       playNext += 125;
+      overlayClear();
       overlayHline(playColumn);
       draw();
     }
@@ -122,7 +156,7 @@ void MStep::play(char column) {
     pad = i * gridWidth + column;
     if (grid[pad / 8] & (1 << (pad % 8))) {
       midi->noteOn(9, note[i], velocity[i]);
-      active[i] = 36 + i;
+      active[i] = note[i];
     }
   }
 }
@@ -139,8 +173,6 @@ void MStep::overlayClear() {
 }
 
 void MStep::overlayHline(char column) {
-  for (int i = 0; i < gridStateSize; i++)
-    gridOverlay[i] = 0;
   for (int i = column; i < numPads; i += gridWidth)
     gridOverlay[i >> 3] ^= 1 << (i & 7);
 }

@@ -2,6 +2,7 @@
 #include <pthread.h>
 #include <curses.h>
 #include <pthread.h>
+#include <ctype.h>
 #include <time.h>
 #include <sys/time.h>
 #include <vector>
@@ -129,6 +130,7 @@ private:
   }
 };
 
+
 class CursesMIDI : public MIDI {
 public:
   WINDOW *win;
@@ -154,6 +156,7 @@ public:
       for (int i = 0; i < active->size(); i++)
 	if (active->at(i) == note) {
 	  active->erase(active->begin() + i);
+	  break;
 	}
     } else {
       active->push_back(note);
@@ -204,6 +207,8 @@ public:
   }
 };
 
+static const char *COMMAND[] = {"Play", "Quit", "Note", "Up", "Down", "Select"};
+
 class CursesControl : public Control {
 public:
   pthread_mutex_t *mutex_curses;
@@ -216,10 +221,7 @@ public:
     this->x = x;
     this->y = y;
     event = 0;
-    mvaddstr(y + 1, x, "[P]lay");
-    mvaddstr(y + 2, x, "[N]ote");
-    mvaddstr(y + 3, x, "[Q]uit");
-    refresh();
+    indicate(0);
   }
 
   int getEvent() {
@@ -230,23 +232,20 @@ public:
 
   void indicate(int event) {
     pthread_mutex_lock(mutex_curses);
-    if (event & PLAY) {
-      attron(A_BOLD);
-      mvaddstr(y + 1, x, "[P]lay");
+    for (int i = 0; i < 6; i++) {
+      if (event & (1 << i))
+	attron(A_BOLD);
+      mvaddstr(y + i, x, COMMAND[i]);
       attroff(A_BOLD);
-    } else {
-      mvaddstr(y + 1, x, "[P]lay");
     }
     refresh();
     pthread_mutex_unlock(mutex_curses);
   }
 
-  void shutdown() {
-    event |= QUIT;
-  }
-
-  void playPause() {
-    event |= PLAY;
+  void keyPress(int c) {
+    for (int i = 0; i < 6; i++)
+      if (tolower(COMMAND[i][0]) == tolower(c))
+	event |= 1 << i;
   }
 
 private:
@@ -323,11 +322,6 @@ int uiloop(int grid_rows, int grid_columns) {
     int c =  getch();
     pthread_mutex_unlock(&mutex_curses);
 
-    if (c == 'q' || c == 'Q') {
-      control->shutdown();
-      break;
-    }
-
     switch (c) {
       // no key pressed: sleep and check again
     case ERR:
@@ -347,20 +341,15 @@ int uiloop(int grid_rows, int grid_columns) {
     case KEY_RIGHT:
       grid->move(0, 1);
       break;
-
-    case 'p':
-    case 'P':
-      control->playPause();
-      break;
-
     case ' ':
       grid->press();
       break;
-
     default:
-      break;
+      control->keyPress(c);
     }
 
+    if (c == 'q')
+      break;
   }
 
   pthread_join(thread_mstep, NULL);
