@@ -26,11 +26,14 @@ class Control {
   };
   virtual void indicate(int event) = 0;
   virtual int getEvent() = 0;
+  virtual int getUp() = 0;
+  virtual int getDown() = 0;
 };
 
 class Display {
  public:
-  virtual void write() = 0;
+  virtual void write(int row, char *msg) = 0;
+  virtual void clear() = 0;
 };
 
 typedef struct pattern_s {
@@ -68,6 +71,8 @@ private:
   void overlayHline(char column);
   void overlayClear();
   void play(char column);
+  void noteTick();
+  char noteRow;
 };
 
 #endif

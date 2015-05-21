@@ -172,7 +172,7 @@ public:
       sprintf(buf, "[%d] %s%d (%d)",
 	      channel,
 	      notestr[active->at(i) % 12],
-	      active->at(i) / 12,
+	      active->at(i) / 12, // octave off by one?
 	      127);
       mvwaddstr(this->win, 1 + i, 1, buf);
     }
@@ -198,12 +198,21 @@ public:
     this->width = columns + 2;
     this->height = rows + 2;
     this->win = newwin(this->height, this->width, y, x);
-    box(this->win, 0, 0);
-    mvwaddstr(this->win, 0, 2, "LCD");
+    clear();
+  }
+
+  void write(int row, char *msg) {
+    mvwaddstr(this->win, row + 1, 1, msg);
     wrefresh(this->win);
   }
 
-  void write() {
+  void clear() {
+    pthread_mutex_lock(mutex_curses);
+    wclear(win);
+    box(win, 0, 0);
+    mvwaddstr(win, 0, 2, "LCD");
+    wrefresh(win);
+    pthread_mutex_unlock(mutex_curses);
   }
 };
 
@@ -215,18 +224,34 @@ public:
   int x;
   int y;
   int event;
+  int up;
+  int down;
 
   CursesControl(pthread_mutex_t *mutex_curses, int x, int y) {
     this->mutex_curses = mutex_curses;
     this->x = x;
     this->y = y;
     event = 0;
+    up = 0;
+    down = 0;
     indicate(0);
   }
 
   int getEvent() {
     int ret = event;
     event = 0;
+    return ret;
+  }
+
+  int getUp() {
+    int ret = up;
+    up = 0;
+    return ret;
+  }
+
+  int getDown() {
+    int ret = down;
+    down = 0;
     return ret;
   }
 
@@ -243,9 +268,18 @@ public:
   }
 
   void keyPress(int c) {
+    c = tolower(c);
     for (int i = 0; i < 6; i++)
-      if (tolower(COMMAND[i][0]) == tolower(c))
+      if (tolower(COMMAND[i][0]) == c)
 	event |= 1 << i;
+    switch (c) {
+    case 'u':
+      up++;
+      break;
+    case 'd':
+      down++;
+      break;
+    }
   }
 
 private:

@@ -1,5 +1,11 @@
 #include <stdlib.h>
+
+#include <stdio.h>
 #include "mstep.hpp"
+
+#ifndef F
+#define F(x) (char *)x
+#endif
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -56,6 +62,43 @@ MStep::MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
   activePattern = 0;
 }
 
+void MStep::noteTick() {
+  bool rowChanged = false;
+  bool noteChanged = false;
+  char buf[20];
+  char row, column;
+  int mod;
+  int value;
+  const char *notes[] = {"C", "C#", "D", "D#", "E", "F",
+			 "F#", "G", "G#", "A", "A#", "B"};
+
+  while (grid->getPress(&row, &column)) {
+    this->noteRow = row;
+    rowChanged = true;
+  }
+
+  if (this->noteRow < 0)
+    return;
+
+  value = pattern[activePattern].note[this->noteRow];
+
+  mod = control->getUp() - control->getDown();
+  if (mod) {
+    value = MIN(127, MAX(0, value + mod));
+    noteChanged = true;
+  }
+
+  if (rowChanged || noteChanged) {
+    sprintf(buf, F("  %d: %s%d"),
+	    this->noteRow, notes[value % 12], value / 12 - 1);
+    display->clear();
+    display->write(0, F("NOTE"));
+    display->write(1, buf);
+  }
+
+  pattern[activePattern].note[this->noteRow] = value;
+}
+
 void MStep::run() {
   char row, column;
   char playColumn = -1;
@@ -63,8 +106,10 @@ void MStep::run() {
   int pad;
   int event;
   bool noteActive = false;
-  int noteRow = -1;
+  int noteRow;
+  int noteValuePrev;
   int noteValue;
+  char buf[10];
 
   // displayStartupSequence();
   draw();
@@ -76,29 +121,21 @@ void MStep::run() {
       break;
 
     if (event & Control::NOTE) {
-      if (!noteActive) {
-	control->indicate(Control::NOTE | (playColumn < 0 ? 0 : Control::PLAY));
-	noteRow = -1;
-	noteActive = true;
-      } else {
-	control->indicate(playColumn < 0 ? 0 : Control::PLAY);
+      if (noteActive) {
+	control->indicate(playColumn >= 0 ? Control::PLAY : 0);
 	noteActive = false;
+	display->clear();
+      } else {
+	control->indicate(Control::NOTE | (playColumn >= 0 ? Control::PLAY : 0));
+	noteActive = true;
+	this->noteRow = -1;
+	display->write(0, F("NOTE"));
+	display->write(1, F("  select row"));
       }
     }
 
-    if (noteActive) {
-      while (grid->getPress(&row, &column))
-	noteRow = row;
-
-      if (noteRow >= 0) {
-	noteValue = pattern[activePattern].note[noteRow];
-	if (event & Control::UP)
-	  noteValue = MIN(127, noteValue + 1);
-	if (event & Control::DOWN)
-	  noteValue = MAX(0, noteValue - 1);
-	pattern[activePattern].note[noteRow] = noteValue;
-      }
-    }
+    if (noteActive)
+      noteTick();
 
     if (!noteActive) {
       while (grid->getPress(&row, &column)) {
