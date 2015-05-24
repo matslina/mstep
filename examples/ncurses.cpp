@@ -173,7 +173,7 @@ public:
       sprintf(buf, "[%d] %s%d (%d)",
 	      channel,
 	      notestr[active->at(i) % 12],
-	      active->at(i) / 12, // octave off by one?
+	      active->at(i) / 12 - 1,
 	      127);
       mvwaddstr(this->win, 1 + i, 1, buf);
     }
