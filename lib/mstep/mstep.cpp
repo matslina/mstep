@@ -112,6 +112,7 @@ void MStep::tempoTick() {
   tempo = MIN(240, MAX(1, tempo + mod));
   stepDelay = (240000 / tempo) / gridWidth;
   sprintf(buf, "  %d BPM", this->tempo);
+  display->clear();
   display->write(0, F("TEMPO"));
   display->write(1, buf);
 }
