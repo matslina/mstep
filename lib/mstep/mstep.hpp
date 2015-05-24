@@ -1,6 +1,8 @@
 #ifndef MSTEP_H_dfa982498fjasdjf982093jfas
 #define MSTEP_H_dfa982498fjasdjf982093jfas
 
+#define DEFAULT_TEMPO 120
+
 class Grid {
  public:
   virtual bool getPress(char *row, char *column) = 0;
@@ -23,6 +25,7 @@ class Control {
     UP = 8,
     DOWN = 16,
     SELECT = 32,
+    TEMPO = 64,
   };
   virtual void indicate(int event) = 0;
   virtual int getEvent() = 0;
@@ -64,6 +67,8 @@ private:
   char gridWidth;
   char gridHeight;
   int numPads;
+  int tempo;
+  int stepDelay;
   void (*sleep)(unsigned long);
   unsigned long (*time)(void);
   void displayStartupSequence();
@@ -73,6 +78,7 @@ private:
   void play(char column);
   void noteTick();
   char noteRow;
+  void tempoTick();
 };
 
 #endif

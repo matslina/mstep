@@ -60,6 +60,8 @@ MStep::MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
   }
 
   activePattern = 0;
+  tempo = DEFAULT_TEMPO;
+  stepDelay = (240000 / tempo) / gridWidth;
 }
 
 void MStep::noteTick() {
@@ -99,6 +101,21 @@ void MStep::noteTick() {
   pattern[activePattern].note[this->noteRow] = value;
 }
 
+void MStep::tempoTick() {
+  int mod;
+  char buf[10];
+
+  mod = control->getUp() - control->getDown();
+  if (!mod)
+    return;
+
+  tempo = MIN(240, MAX(0, tempo + mod));
+  stepDelay = (240000 / tempo) / gridWidth;
+  sprintf(buf, "  %d BPM", this->tempo);
+  display->write(0, F("TEMPO"));
+  display->write(1, buf);
+}
+
 void MStep::run() {
   char row, column;
   char playColumn = -1;
@@ -106,6 +123,7 @@ void MStep::run() {
   int pad;
   int event;
   bool noteActive = false;
+  bool tempoActive = false;
   int noteRow;
   int noteValuePrev;
   int noteValue;
@@ -120,7 +138,7 @@ void MStep::run() {
     if (event & Control::QUIT)
       break;
 
-    if (event & Control::NOTE) {
+    if (event & Control::NOTE && not tempoActive) {
       if (noteActive) {
 	control->indicate(playColumn >= 0 ? Control::PLAY : 0);
 	noteActive = false;
@@ -134,10 +152,28 @@ void MStep::run() {
       }
     }
 
+    if (event & Control::TEMPO && not noteActive) {
+      if (tempoActive) {
+	control->indicate(playColumn >= 0 ? Control::PLAY : 0);
+	tempoActive = false;
+	display->clear();
+      } else {
+	control->indicate(Control::TEMPO | (playColumn >= 0 ? Control::PLAY : 0));
+	tempoActive = true;
+	display->clear();
+	sprintf(buf, "  %d BPM", tempo);
+	display->write(0, F("TEMPO"));
+	display->write(1, buf);
+      }
+    }
+
     if (noteActive)
       noteTick();
 
-    if (!noteActive) {
+    if (tempoActive)
+      tempoTick();
+
+    if (!noteActive && !tempoActive) {
       while (grid->getPress(&row, &column)) {
 	pad = row * gridWidth + column;
 	pattern[activePattern].grid[pad >> 3] ^= 1 << (pad & 0x7);
@@ -167,7 +203,7 @@ void MStep::run() {
     if (playColumn >= 0 && playNext <= time()) {
       playColumn = (playColumn + 1) % gridWidth;
       play(playColumn);
-      playNext += 125;
+      playNext += stepDelay;
       overlayClear();
       overlayHline(playColumn);
       draw();

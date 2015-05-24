@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <ctype.h>
 #include <time.h>
+#include <string.h>
 #include <sys/time.h>
 #include <vector>
 #include <algorithm>
@@ -216,21 +217,23 @@ public:
   }
 };
 
-static const char *COMMAND[] = {"Play", "Quit", "Note", "Up", "Down", "Select"};
+static const char *COMMAND[] = {"Play", "Quit", "Note", "Up", "Down", "Select", "Tempo"};
 
 class CursesControl : public Control {
 public:
   pthread_mutex_t *mutex_curses;
   int x;
   int y;
+  int rows;
   int event;
   int up;
   int down;
 
-  CursesControl(pthread_mutex_t *mutex_curses, int x, int y) {
+  CursesControl(pthread_mutex_t *mutex_curses, int x, int y, int rows) {
     this->mutex_curses = mutex_curses;
     this->x = x;
     this->y = y;
+    this->rows = rows;
     event = 0;
     up = 0;
     down = 0;
@@ -256,11 +259,18 @@ public:
   }
 
   void indicate(int event) {
+    int len, offset;
     pthread_mutex_lock(mutex_curses);
-    for (int i = 0; i < 6; i++) {
+    offset = len = 0;
+    for (int i = 0; i < 7; i++) {
+      if (i % rows == 0) {
+	offset += len + 1;
+	len = 0;
+      }
+      len = MAX(strlen(COMMAND[i]), len);
       if (event & (1 << i))
 	attron(A_BOLD);
-      mvaddstr(y + i, x, COMMAND[i]);
+      mvaddstr(y + (i % rows), x + offset, COMMAND[i]);
       attroff(A_BOLD);
     }
     refresh();
@@ -269,7 +279,7 @@ public:
 
   void keyPress(int c) {
     c = tolower(c);
-    for (int i = 0; i < 6; i++)
+    for (int i = 0; i < 7; i++)
       if (tolower(COMMAND[i][0]) == c)
 	event |= 1 << i;
     switch (c) {
@@ -345,7 +355,7 @@ int uiloop(int grid_rows, int grid_columns) {
   display = new CursesDisplay(&mutex_curses, 1, 1, 4, 16);
   grid = new CursesGrid(&mutex_curses, 1, display->height + 1,
 			grid_rows, grid_columns);
-  control = new CursesControl(&mutex_curses, display->width + 1, 1);
+  control = new CursesControl(&mutex_curses, display->width + 1, 1, display->height);
   midi = new CursesMIDI(&mutex_curses, 1, display->height + grid->height + 1, 10);
   mstep = new MStep(grid, control, display, midi, sleepms, timems);
 
