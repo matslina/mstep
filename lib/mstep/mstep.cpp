@@ -117,6 +117,22 @@ void MStep::tempoTick() {
   display->write(1, buf);
 }
 
+void MStep::patternTick() {
+  int mod;
+  char buf[10];
+
+  mod = control->getUp() - control->getDown();
+  if (!mod)
+    return;
+
+  activePattern = MIN(gridHeight - 1, MAX(0, activePattern + mod));
+  draw();
+  sprintf(buf, "  %d", activePattern);
+  display->clear();
+  display->write(0, F("PATTERN"));
+  display->write(1, buf);
+}
+
 void MStep::run() {
   char row, column;
   char playColumn = -1;
@@ -139,7 +155,7 @@ void MStep::run() {
     if (event & Control::QUIT)
       break;
 
-    if (event & Control::NOTE && not tempoActive) {
+    if (event & Control::NOTE && not tempoActive && not patternActive) {
       if (noteActive) {
 	control->indicate(playColumn >= 0 ? Control::PLAY : 0);
 	noteActive = false;
@@ -153,7 +169,7 @@ void MStep::run() {
       }
     }
 
-    if (event & Control::TEMPO && not noteActive) {
+    if (event & Control::TEMPO && not noteActive && not patternActive) {
       if (tempoActive) {
 	control->indicate(playColumn >= 0 ? Control::PLAY : 0);
 	tempoActive = false;
@@ -168,13 +184,31 @@ void MStep::run() {
       }
     }
 
+    if (event & Control::PATTERN && not tempoActive && not noteActive) {
+      if (patternActive) {
+	control->indicate(playColumn >= 0 ? Control::PLAY : 0);
+	patternActive = false;
+	display->clear();
+      } else {
+	control->indicate(Control::PATTERN | (playColumn >= 0 ? Control::PLAY : 0));
+	patternActive = true;
+	display->clear();
+	sprintf(buf, "  %d", activePattern);
+	display->write(0, F("PATTERN"));
+	display->write(1, buf);
+      }
+    }
+
     if (noteActive)
       noteTick();
 
     if (tempoActive)
       tempoTick();
 
-    if (!noteActive && !tempoActive) {
+    if (patternActive)
+      patternTick();
+
+    if (!noteActive && !tempoActive && !patternActive) {
       while (grid->getPress(&row, &column)) {
 	pad = row * gridWidth + column;
 	pattern[activePattern].grid[pad >> 3] ^= 1 << (pad & 0x7);

@@ -26,6 +26,7 @@ class Control {
     DOWN = 16,
     SELECT = 32,
     TEMPO = 64,
+    PATTERN = 128,
   };
   virtual void indicate(int event) = 0;
   virtual int getEvent() = 0;
@@ -61,6 +62,7 @@ private:
   char *buf;
   pattern_t *pattern;
   int activePattern;
+  bool patternActive; // FIXME: naming durr
   char *gridOverlay;
   char *gridBuf;
   char gridStateSize;
@@ -79,6 +81,7 @@ private:
   void noteTick();
   char noteRow;
   void tempoTick();
+  void patternTick();
 };
 
 #endif
