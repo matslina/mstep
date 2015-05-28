@@ -244,7 +244,10 @@ void MStep::run() {
       draw();
     }
 
-    sleep(30);
+    if (playColumn >= 0)
+      sleep(MIN(30, MAX(0, playNext - time())));
+    else
+      sleep(30);
   }
 }
 
