@@ -191,16 +191,17 @@ void MStep::run() {
 
     if (mode & Control::NOTE)
       noteTick();
-    else if (mode & Control::TEMPO)
-      tempoTick();
-    else if (mode & Control::PATTERN)
-      patternTick();
     else
       while (grid->getPress(&row, &column)) {
 	pad = row * gridWidth + column;
 	pattern[activePattern].grid[pad >> 3] ^= 1 << (pad & 0x7);
 	draw();
       }
+
+    if (mode & Control::TEMPO)
+      tempoTick();
+    else if (mode & Control::PATTERN)
+      patternTick();
 
     if (mode & Control::PLAY) {
       if (playNext <= time()) {
