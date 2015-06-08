@@ -135,18 +135,19 @@ void MStep::patternTick() {
 
 void MStep::run() {
   char row, column;
-  char playColumn = -1;
+  char playColumn;
   unsigned long playNext;
   int pad;
   int event;
-  bool noteActive = false;
-  bool tempoActive = false;
   int noteRow;
   int noteValuePrev;
   int noteValue;
   char buf[10];
+  int mode;
 
   // displayStartupSequence();
+  mode = 0;
+  control->indicate(mode);
   draw();
 
   while (1) {
@@ -155,74 +156,8 @@ void MStep::run() {
     if (event & Control::QUIT)
       break;
 
-    if (event & Control::NOTE && not tempoActive && not patternActive) {
-      if (noteActive) {
-	control->indicate(playColumn >= 0 ? Control::PLAY : 0);
-	noteActive = false;
-	display->clear();
-      } else {
-	control->indicate(Control::NOTE | (playColumn >= 0 ? Control::PLAY : 0));
-	noteActive = true;
-	this->noteRow = -1;
-	display->write(0, F("NOTE"));
-	display->write(1, F("  select row"));
-      }
-    }
-
-    if (event & Control::TEMPO && not noteActive && not patternActive) {
-      if (tempoActive) {
-	control->indicate(playColumn >= 0 ? Control::PLAY : 0);
-	tempoActive = false;
-	display->clear();
-      } else {
-	control->indicate(Control::TEMPO | (playColumn >= 0 ? Control::PLAY : 0));
-	tempoActive = true;
-	display->clear();
-	sprintf(buf, "  %d BPM", tempo);
-	display->write(0, F("TEMPO"));
-	display->write(1, buf);
-      }
-    }
-
-    if (event & Control::PATTERN && not tempoActive && not noteActive) {
-      if (patternActive) {
-	control->indicate(playColumn >= 0 ? Control::PLAY : 0);
-	patternActive = false;
-	display->clear();
-      } else {
-	control->indicate(Control::PATTERN | (playColumn >= 0 ? Control::PLAY : 0));
-	patternActive = true;
-	display->clear();
-	sprintf(buf, "  %d", activePattern);
-	display->write(0, F("PATTERN"));
-	display->write(1, buf);
-      }
-    }
-
-    if (noteActive)
-      noteTick();
-
-    if (tempoActive)
-      tempoTick();
-
-    if (patternActive)
-      patternTick();
-
-    if (!noteActive && !tempoActive && !patternActive) {
-      while (grid->getPress(&row, &column)) {
-	pad = row * gridWidth + column;
-	pattern[activePattern].grid[pad >> 3] ^= 1 << (pad & 0x7);
-	draw();
-      }
-    }
-
     if (event & Control::PLAY) {
-      if (playColumn < 0) {
-	playColumn = gridWidth - 1;
-	playNext = time();
-	control->indicate(Control::PLAY);
-      } else {
-	playColumn = -1;
+      if (mode & Control::PLAY) {
 	overlayClear();
 	draw();
 	for (int i = 0; i < gridHeight; i ++) {
@@ -231,21 +166,53 @@ void MStep::run() {
 	    pattern[activePattern].active[i] = -1;
 	  }
 	}
-	control->indicate(0);
+	mode &= ~Control::PLAY;
+	control->indicate(mode);
+      } else {
+	mode |= Control::PLAY;
+	playColumn = gridWidth - 1;
+	playNext = time();
+	control->indicate(mode);
       }
     }
 
-    if (playColumn >= 0 && playNext <= time()) {
-      playColumn = (playColumn + 1) % gridWidth;
-      play(playColumn);
-      playNext += stepDelay;
-      overlayClear();
-      overlayHline(playColumn);
-      draw();
+    // process control events if:
+    if (event && !(event & (event - 1)) &&
+	event & (Control::NOTE | Control::TEMPO | Control::PATTERN)) {
+      if (mode & event)
+	display->clear(); // TODO: display default screen
+      else
+	mode &= Control::PLAY;
+      mode ^= event;
+      control->indicate(mode);
+      this->noteRow = -1; // TODO: generalize, e.g. 'selectedRow'
+      // FIXME: control up/down is now required to update display
     }
 
-    if (playColumn >= 0)
+    if (mode & Control::NOTE)
+      noteTick();
+    else if (mode & Control::TEMPO)
+      tempoTick();
+    else if (mode & Control::PATTERN)
+      patternTick();
+    else
+      while (grid->getPress(&row, &column)) {
+	pad = row * gridWidth + column;
+	pattern[activePattern].grid[pad >> 3] ^= 1 << (pad & 0x7);
+	draw();
+      }
+
+    if (mode & Control::PLAY) {
+      if (playNext <= time()) {
+	playColumn = (playColumn + 1) % gridWidth;
+	play(playColumn);
+	playNext += stepDelay;
+	overlayClear();
+	overlayHline(playColumn);
+	draw();
+      }
       sleep(MIN(30, MAX(0, playNext - time())));
+    }
     else
       sleep(30);
   }

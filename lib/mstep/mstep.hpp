@@ -62,7 +62,6 @@ private:
   char *buf;
   pattern_t *pattern;
   int activePattern;
-  bool patternActive; // FIXME: naming durr
   char *gridOverlay;
   char *gridBuf;
   char gridStateSize;
