@@ -149,11 +149,11 @@ module back_panel(height, width) {
   difference() {
     square([width, height]);
     translate([20, height / 2, 0])
-      MIDI();
-    translate([55, height / 2, 0])
-      MIDI();
-    translate([width - 45, height / 2, 0])
       DC();
+    translate([50, height / 2, 0])
+      MIDI();
+    translate([85, height / 2, 0])
+      MIDI();
     translate([width - 30, height / 2, 0])
       power_switch();
   }
@@ -163,21 +163,52 @@ module back_panel(height, width) {
 
 // power switch
 
-//wall_east(177, 8);
-//wall_south(260, 8);
-//wall_northwest(177, 8);
+// Ponoko P3 guide
+P3w = 790;
+P3h = 384;
+color("red") difference() {
+  square([P3w, P3h]);
+  translate([0.5, 0.5, 0])
+    square([P3w - 1, P3h - 1]);
+}
 
-front_panel(10);
-translate([265, 0, 0])
-  wall_east(177, 8);
-translate([265, 185, 0])
-  wall_west(177, 8);
-translate([0, 185, 0])
-  square([260, 177]);
-translate([0, -50, 0])
-  back_panel(30, 260 - 8);
-translate([0, -15, 0])
-  wall_south(260, 8);
+module bottom_panel() {
+  difference() {
+    square([260, 177]);
+    // trellis mount holes
+    for (i=[0:3]) {
+      for (j=[0:1]) {
+        translate([10 + 60 * i,
+                   10 + 60 * j, 0]) {
+          translate([15, 30])
+            circle(1.5);
+          translate([45, 30])
+            circle(1.5);
+        }
+      }
+    }
+    // lcd mount holes
+    
+  }
+}
+
+translate([5, 5, 0]) {
+  front_panel(10);
+  translate([265, 0, 0])
+    wall_east(177, 8);
+  translate([265, 185, 0])
+    wall_west(177, 8);
+  translate([0, 185, 0])
+    bottom_panel();
+  translate([280, 260, 0])
+    rotate([0, 0, -90])
+      back_panel(21, 260 - 8);
+  translate([315, 260, 0])
+    rotate([0, 0, -90])
+      wall_south(260, 8);
+}
+
+
 
 // bottom plate
 //square([240 + 20, 120 + 37 + 20]);
