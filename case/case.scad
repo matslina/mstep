@@ -5,7 +5,7 @@
 // Each pad surrounded by a 'padgap' mm gap.
 // Object will be 60*rows x 60*cols mm.
 // This object only covers the trellis PCBs.
-module trellis(rows, cols, padgap) {
+module trellis_top(rows, cols, padgap) {
   difference() {
     square([60 * cols, 60 * rows]);
     for (i=[0:rows*4-1])
@@ -17,12 +17,29 @@ module trellis(rows, cols, padgap) {
   }
 }
 
+module trellis_bottom(rows, cols) {
+  difference() {
+    square([60 * cols, 60 * rows]);
+    // trellis mount holes
+    for (i=[0:rows-1]) {
+      for (j=[0:cols-1]) {
+        translate([60 * j + 15, 60 * i +30])
+          circle(1.5);
+        translate([60 * j + 45, 60 * i + 30])
+          circle(1.5);
+      }
+    }
+  }
+}
+
+
+
 // Control panel
 // Holds 'buttons' keyboard switches, one 16x LCD
 // display and one shaft encoder.
 // Parameters 'height' and 'width' refer to size
 // of the control panel.
-module controls(buttons, height, width) {
+module controls_top(buttons, height, width) {
   btn_size = 18.5;
   lcd_height = 25;
   lcd_width = 70;
@@ -48,6 +65,11 @@ module controls(buttons, height, width) {
   }
 }
 
+module controls_bottom(height, width) {
+  square([width, height]);
+}
+
+
 // Adds padding around a rectangular object.
 // Object must be of width 'w' and height 'h'.
 // Padding is added on the north, east, south and
@@ -68,13 +90,24 @@ module pad_rect(w, h, pn, pe, ps, pw) {
 
 // The complete mstep front panel
 // With padding 'p'.
-module front_panel(p) {
+module mstep_top(p) {
   pad_rect(240, 120, p, p, p, p)
-    trellis(2, 4, 1);
+    trellis_top(2, 4, 1);
 
   translate([0,130, 0])
     pad_rect(240, 37, p, p, 0, p)
-      controls(6, 37, 240);
+      controls_top(6, 37, 240);
+}
+
+// The complete mstep bottom panel
+// With padding 'p'.
+module mstep_bottom(p) {
+  pad_rect(240, 120, p, p, p, p)
+    trellis_bottom(2, 4);
+
+  translate([0,130, 0])
+    pad_rect(240, 37, p, p, 0, p)
+      controls_bottom(37, 240);
 }
 
 module wall_joint(t) {
@@ -172,34 +205,14 @@ color("red") difference() {
     square([P3w - 1, P3h - 1]);
 }
 
-module bottom_panel() {
-  difference() {
-    square([260, 177]);
-    // trellis mount holes
-    for (i=[0:3]) {
-      for (j=[0:1]) {
-        translate([10 + 60 * i,
-                   10 + 60 * j, 0]) {
-          translate([15, 30])
-            circle(1.5);
-          translate([45, 30])
-            circle(1.5);
-        }
-      }
-    }
-    // lcd mount holes
-    
-  }
-}
-
 translate([5, 5, 0]) {
-  front_panel(10);
+  mstep_top(10);
   translate([265, 0, 0])
     wall_east(177, 8);
   translate([265, 185, 0])
     wall_west(177, 8);
   translate([0, 185, 0])
-    bottom_panel();
+    mstep_bottom(10);
   translate([280, 260, 0])
     rotate([0, 0, -90])
       back_panel(21, 260 - 8);
