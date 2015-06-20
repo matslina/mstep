@@ -62,6 +62,8 @@ MStep::MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
   activePattern = 0;
   tempo = DEFAULT_TEMPO;
   stepDelay = (240000 / tempo) / gridWidth;
+  activeRow = -1;
+  activeColumn = -1;
 }
 
 void MStep::noteTick() {
@@ -75,14 +77,21 @@ void MStep::noteTick() {
 			 "F#", "G", "G#", "A", "A#", "B"};
 
   while (grid->getPress(&row, &column)) {
-    this->noteRow = row;
     rowChanged = true;
   }
 
-  if (this->noteRow < 0)
+  if (rowChanged) {
+    if (this->activeRow > -1)
+      overlayHline(this->activeRow);
+    overlayHline(row);
+    draw();
+    this->activeRow = row;
+  }
+
+  if (this->activeRow < 0)
     return;
 
-  value = pattern[activePattern].note[this->noteRow];
+  value = pattern[activePattern].note[this->activeRow];
 
   mod = control->getUp() - control->getDown();
   if (mod) {
@@ -92,13 +101,13 @@ void MStep::noteTick() {
 
   if (rowChanged || noteChanged) {
     sprintf(buf, F("  %d: %s%d"),
-	    this->noteRow, notes[value % 12], value / 12 - 1);
+	    this->activeRow, notes[value % 12], value / 12 - 1);
     display->clear();
     display->write(0, F("NOTE"));
     display->write(1, buf);
   }
 
-  pattern[activePattern].note[this->noteRow] = value;
+  pattern[activePattern].note[this->activeRow] = value;
 }
 
 void MStep::tempoTick() {
@@ -135,11 +144,9 @@ void MStep::patternTick() {
 
 void MStep::run() {
   char row, column;
-  char playColumn;
   unsigned long playNext;
   int pad;
   int event;
-  int noteRow;
   int noteValuePrev;
   int noteValue;
   char buf[10];
@@ -158,7 +165,7 @@ void MStep::run() {
 
     if (event & Control::PLAY) {
       if (mode & Control::PLAY) {
-	overlayClear();
+	overlayVline(activeColumn);
 	draw();
 	for (int i = 0; i < gridHeight; i ++) {
 	  if (pattern[activePattern].active[i] >= 0) {
@@ -170,7 +177,8 @@ void MStep::run() {
 	control->indicate(mode);
       } else {
 	mode |= Control::PLAY;
-	playColumn = gridWidth - 1;
+	activeColumn = gridWidth - 1;
+	overlayVline(activeColumn);
 	playNext = time();
 	control->indicate(mode);
       }
@@ -185,7 +193,11 @@ void MStep::run() {
 	mode &= Control::PLAY;
       mode ^= event;
       control->indicate(mode);
-      this->noteRow = -1; // TODO: generalize, e.g. 'selectedRow'
+      if (this->activeRow >= 0) {
+	overlayHline(this->activeRow);
+	draw();
+      }
+      this->activeRow = -1;
       // FIXME: control up/down is now required to update display
     }
 
@@ -205,11 +217,11 @@ void MStep::run() {
 
     if (mode & Control::PLAY) {
       if (playNext <= time()) {
-	playColumn = (playColumn + 1) % gridWidth;
-	play(playColumn);
+	overlayVline(activeColumn);
+	activeColumn = (activeColumn + 1) % gridWidth;
+	play(activeColumn);
 	playNext += stepDelay;
-	overlayClear();
-	overlayHline(playColumn);
+	overlayVline(activeColumn);
 	draw();
       }
       sleep(MIN(30, MAX(0, playNext - time())));
@@ -246,13 +258,13 @@ void MStep::draw() {
   grid->draw(gridBuf);
 }
 
-void MStep::overlayClear() {
-  for (int i = 0; i < gridStateSize; i++)
-    gridOverlay[i] = 0;
+void MStep::overlayVline(char column) {
+  for (int i = column; i < numPads; i += gridWidth)
+    gridOverlay[i >> 3] ^= 1 << (i & 7);
 }
 
-void MStep::overlayHline(char column) {
-  for (int i = column; i < numPads; i += gridWidth)
+void MStep::overlayHline(char row) {
+  for (int i = row * gridWidth; i < (row + 1) * gridWidth; i++)
     gridOverlay[i >> 3] ^= 1 << (i & 7);
 }
 

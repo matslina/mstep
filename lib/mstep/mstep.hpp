@@ -74,11 +74,12 @@ private:
   unsigned long (*time)(void);
   void displayStartupSequence();
   void draw();
-  void overlayHline(char column);
-  void overlayClear();
+  void overlayVline(char column);
+  void overlayHline(char row);
   void play(char column);
   void noteTick();
-  char noteRow;
+  char activeRow;
+  char activeColumn;
   void tempoTick();
   void patternTick();
 };
