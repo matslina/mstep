@@ -77,11 +77,17 @@ private:
   void overlayVline(char column);
   void overlayHline(char row);
   void play(char column);
-  void noteTick();
   char activeRow;
   char activeColumn;
+  void tempoStart();
+  void tempoStop();
   void tempoTick();
+  void patternStart();
+  void patternStop();
   void patternTick();
+  void noteStart();
+  void noteStop();
+  void noteTick();
 };
 
 #endif

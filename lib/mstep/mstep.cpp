@@ -66,6 +66,21 @@ MStep::MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
   activeColumn = -1;
 }
 
+void MStep::noteStart() {
+  activeRow = -1;
+  display->clear();
+  display->write(0, F("NOTE"));
+  display->write(1, F("  <select row>"));
+}
+
+void MStep::noteStop() {
+  if (activeRow > -1) {
+    overlayHline(activeRow);
+    draw();
+  }
+  activeRow = -1;
+}
+
 void MStep::noteTick() {
   bool rowChanged = false;
   bool noteChanged = false;
@@ -110,6 +125,19 @@ void MStep::noteTick() {
   pattern[activePattern].note[this->activeRow] = value;
 }
 
+void MStep::tempoStart() {
+  char buf[20];
+
+  sprintf(buf, "  %d BPM", this->tempo);
+  display->clear();
+  display->write(0, F("TEMPO"));
+  display->write(1, buf);
+}
+
+void MStep::tempoStop() {
+  // TODO: remove method if it's not needed
+}
+
 void MStep::tempoTick() {
   int mod;
   char buf[10];
@@ -124,6 +152,19 @@ void MStep::tempoTick() {
   display->clear();
   display->write(0, F("TEMPO"));
   display->write(1, buf);
+}
+
+void MStep::patternStart() {
+  char buf[20];
+
+  sprintf(buf, "  %d", activePattern);
+  display->clear();
+  display->write(0, F("PATTERN"));
+  display->write(1, buf);
+}
+
+void MStep::patternStop() {
+  // TODO: remove method if it's not needed
 }
 
 void MStep::patternTick() {
@@ -184,21 +225,42 @@ void MStep::run() {
       }
     }
 
-    // process control events if:
     if (event && !(event & (event - 1)) &&
 	event & (Control::NOTE | Control::TEMPO | Control::PATTERN)) {
-      if (mode & event)
-	display->clear(); // TODO: display default screen
-      else
-	mode &= Control::PLAY;
-      mode ^= event;
-      control->indicate(mode);
-      if (this->activeRow >= 0) {
-	overlayHline(this->activeRow);
-	draw();
+
+      // with the exception of PLAY, all modes are mutually exclusive,
+      // so we stop the current mode
+      switch (mode & ~Control::PLAY) {
+      case Control::NOTE:
+	noteStop();
+	break;
+      case Control::TEMPO:
+	tempoStop();
+	break;
+      case Control::PATTERN:
+	patternStop();
+	break;
       }
-      this->activeRow = -1;
-      // FIXME: control up/down is now required to update display
+
+      // start the requested mode, unless it was just stopped in which
+      // case we bring back the default display
+      switch (event & ~mode) {
+      case Control::NOTE:
+	noteStart();
+	break;
+      case Control::TEMPO:
+	tempoStart();
+	break;
+      case Control::PATTERN:
+	patternStart();
+	break;
+      default:
+	display->clear();
+	break;
+      }
+
+      mode = (mode & Control::PLAY) | (event & ~mode);
+      control->indicate(mode);
     }
 
     if (mode & Control::NOTE)
