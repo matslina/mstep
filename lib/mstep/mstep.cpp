@@ -200,15 +200,17 @@ void MStep::playStop() {
   draw();
 }
 
-void MStep::playTick() {
+int MStep::playTick() {
   int pad;
   char *grid = pattern[activePattern].grid;
   char *note = pattern[activePattern].note;
   char *velocity = pattern[activePattern].velocity;
   char *active = pattern[activePattern].active;
+  unsigned long int now;
 
-  if (playNext > time())
-    return; // FIXME: return next - time()
+  now = time();
+  if (playNext > now)
+    return playNext - now;
 
   // step to next column and update grid
   overlayVline(activeColumn);
@@ -234,6 +236,7 @@ void MStep::playTick() {
   // schedule next step
   // TODO: remove stepDelay variable and recalculate from tempo
   playNext += stepDelay;
+  return MAX(0, playNext - time());
 }
 
 
@@ -242,6 +245,7 @@ void MStep::run() {
   int pad;
   int event;
   int mode;
+  int sleepDuration;
 
   // displayStartupSequence();
   mode = 0;
@@ -249,6 +253,8 @@ void MStep::run() {
   draw();
 
   while (1) {
+    sleepDuration = 30;
+
     event = control->getEvent();
 
     // special treatment of quit and play events, coz they're special.
@@ -312,9 +318,6 @@ void MStep::run() {
     }
 
     // tick() according to mode
-    if (mode & Control::PLAY)
-      playTick();
-
     switch (mode & ~Control::PLAY) {
     case Control::NOTE:
       noteTick();
@@ -326,8 +329,10 @@ void MStep::run() {
       patternTick();
       break;
     }
+    if (mode & Control::PLAY)
+      sleepDuration = MIN(sleepDuration, playTick());
 
-    sleep(30);
+    sleep(sleepDuration);
   }
 }
 

@@ -82,7 +82,7 @@ private:
   unsigned long int playNext;
   void playStart();
   void playStop();
-  void playTick();
+  int playTick();
   void tempoStart();
   void tempoStop();
   void tempoTick();
