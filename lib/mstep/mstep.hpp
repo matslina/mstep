@@ -2,6 +2,7 @@
 #define MSTEP_H_dfa982498fjasdjf982093jfas
 
 #define DEFAULT_TEMPO 120
+#define DEFAULT_CHANNEL 0
 
 class Grid {
  public:
@@ -27,6 +28,7 @@ class Control {
     SELECT = 32,
     TEMPO = 64,
     PATTERN = 128,
+    CHANNEL = 256,
   };
   virtual void indicate(int event) = 0;
   virtual int getEvent() = 0;
@@ -45,6 +47,7 @@ typedef struct pattern_s {
   char *note;
   char *velocity;
   char *active;
+  char channel;
 } pattern_t;
 
 class MStep {
@@ -90,6 +93,9 @@ private:
   void noteStart();
   void noteStop();
   void noteTick();
+  void channelStart();
+  void channelStop();
+  void channelTick();
 };
 
 #endif

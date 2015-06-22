@@ -44,6 +44,7 @@ MStep::MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
     pattern[i].note = tmpp + gridStateSize;
     pattern[i].velocity = tmpp + gridStateSize + gridHeight;
     pattern[i].active = tmpp + gridStateSize + gridHeight * 2;
+    pattern[i].channel = DEFAULT_CHANNEL;
     tmpp += gridStateSize + gridHeight * 3;
   }
 
@@ -168,6 +169,28 @@ void MStep::patternTick() {
   displayInteger(display, F("PATTERN"), activePattern);
 }
 
+void MStep::channelStart() {
+  displayInteger(display, F("CHANNEL"), pattern[activePattern].channel);
+}
+
+void MStep::channelStop() {
+  // TODO: remove if redundant
+}
+
+void MStep::channelTick() {
+  int mod;
+  int channel;
+
+  mod = control->getUp() - control->getDown();
+  if (!mod)
+    return;
+
+  channel = pattern[activePattern].channel;
+  channel = MIN(15, MAX(0, channel + mod));
+  displayInteger(display, F("PATTERN"), channel);
+  pattern[activePattern].channel = channel;
+}
+
 void MStep::playStart() {
   // schedule next step to happen immediately
   playNext = time();
@@ -185,7 +208,8 @@ void MStep::playStop() {
   // send note off for notes currently on
   for (int i = 0; i < gridHeight; i ++) {
     if (pattern[activePattern].active[i] >= 0) {
-      midi->noteOn(0, pattern[activePattern].active[i], 0);
+      midi->noteOn(pattern[activePattern].channel,
+		   pattern[activePattern].active[i], 0);
       pattern[activePattern].active[i] = -1;
     }
   }
@@ -202,6 +226,7 @@ int MStep::playTick() {
   char *note = pattern[activePattern].note;
   char *velocity = pattern[activePattern].velocity;
   char *active = pattern[activePattern].active;
+  char channel = pattern[activePattern].channel;
   unsigned long int now;
 
   now = time();
@@ -217,14 +242,14 @@ int MStep::playTick() {
   for (int i = 0; i < gridHeight; i ++) {
     // note off for currently playing notes
     if (active[i] >= 0) {
-      midi->noteOn(9, active[i], 0); // FIXME: don't hardcode channel
+      midi->noteOn(channel, active[i], 0);
       active[i] = -1;
     }
 
     // note on according to the grid
     pad = i * gridWidth + activeColumn;
     if (grid[pad / 8] & (1 << (pad % 8))) {
-      midi->noteOn(9, note[i], velocity[i]); // FIXME: don't hardcode channel
+      midi->noteOn(channel, note[i], velocity[i]);
       active[i] = note[i];
     }
   }
@@ -267,7 +292,8 @@ void MStep::run() {
 
     // only process event if it's unambiguous and it isn't garbage
     if (event && !(event & (event - 1)) &&
-	event & (Control::NOTE | Control::TEMPO | Control::PATTERN)) {
+	event & (Control::NOTE | Control::TEMPO |
+		 Control::PATTERN | Control::CHANNEL)) {
 
       // with the exception of PLAY, all modes are mutually exclusive,
       // so we stop the current mode
@@ -280,6 +306,9 @@ void MStep::run() {
 	break;
       case Control::PATTERN:
 	patternStop();
+	break;
+      case Control::CHANNEL:
+	channelStop();
 	break;
       }
 
@@ -294,6 +323,9 @@ void MStep::run() {
 	break;
       case Control::PATTERN:
 	patternStart();
+	break;
+      case Control::CHANNEL:
+	channelStart();
 	break;
       default:
 	display->clear();
@@ -323,6 +355,9 @@ void MStep::run() {
       break;
     case Control::PATTERN:
       patternTick();
+      break;
+    case Control::CHANNEL:
+      channelTick();
       break;
     }
     if (mode & Control::PLAY)

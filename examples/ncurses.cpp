@@ -217,8 +217,10 @@ public:
   }
 };
 
-static const char *COMMAND[] = {"Play", "Quit", "Note", "Up", "Down", "Select", "Tempo", "pAttern"};
-static const char COMMANDCHAR[] = {'P', 'Q', 'N', 'U', 'D', 'S', 'T', 'A'};
+static const char *COMMAND[] = {"Play", "Quit", "Note", "Up", "Down", "Select",
+				"Tempo", "pAttern", "Channel"};
+static const char COMMANDCHAR[] = {'P', 'Q', 'N', 'U', 'D', 'S',
+				   'T', 'A', 'C'};
 
 class CursesControl : public Control {
 public:
@@ -263,7 +265,7 @@ public:
     int len, offset;
     pthread_mutex_lock(mutex_curses);
     offset = len = 0;
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < sizeof(COMMANDCHAR); i++) {
       if (i % rows == 0) {
 	offset += len + 1;
 	len = 0;
@@ -280,7 +282,7 @@ public:
 
   void keyPress(int c) {
     c = tolower(c);
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < sizeof(COMMANDCHAR); i++)
       if (tolower(COMMANDCHAR[i]) == c)
 	event |= 1 << i;
     switch (c) {
