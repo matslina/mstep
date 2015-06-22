@@ -22,10 +22,8 @@ MStep::MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
 
   gridWidth = grid->getWidth();
   gridHeight = grid->getHeight();
-
-  numPads = gridWidth * gridHeight;
-  gridStateSize = ((numPads / 8) +
-		   (numPads % 8 ? 1 : 0));
+  gridStateSize = (((gridWidth * gridHeight) / 8) +
+		   ((gridWidth * gridHeight) % 8 ? 1 : 0));
 
   // this is a bit unwieldy, but helps track memory consumption
   buf = (char *)malloc(gridStateSize + // gridOverlay
@@ -343,7 +341,7 @@ void MStep::draw() {
 }
 
 void MStep::overlayVline(char column) {
-  for (int i = column; i < numPads; i += gridWidth)
+  for (int i = column; i < gridWidth * gridHeight; i += gridWidth)
     gridOverlay[i >> 3] ^= 1 << (i & 7);
 }
 

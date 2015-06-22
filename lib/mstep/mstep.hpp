@@ -67,7 +67,6 @@ private:
   char gridStateSize;
   char gridWidth;
   char gridHeight;
-  int numPads;
   int tempo;
   int stepDelay;
   void (*sleep)(unsigned long);
