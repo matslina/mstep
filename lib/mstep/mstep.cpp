@@ -10,6 +10,17 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
+
+struct pattern_t {
+  char *grid;
+  char *note;
+  char *velocity;
+  char *active;
+  char channel;
+  char activeChannel;
+};
+
+
 MStep::MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
 	     void (*sleep)(unsigned long),
 	     unsigned long (*time)(void)) {
@@ -238,7 +249,7 @@ int MStep::playTick() {
   p = &pattern[playPattern];
   for (int i = 0; i < gridHeight; i ++) {
     if (p->active[i] >= 0) {
-      midi->noteOn(p->channel, p->active[i], 0);
+      midi->noteOn(p->activeChannel, p->active[i], 0);
       p->active[i] = -1;
     }
   }
@@ -267,6 +278,7 @@ int MStep::playTick() {
       p->active[i] = p->note[i];
     }
   }
+  p->activeChannel = p->channel;
 
   // schedule next step
   playNext += (240000 / tempo) / gridWidth;

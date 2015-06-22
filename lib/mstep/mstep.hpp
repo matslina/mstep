@@ -42,13 +42,7 @@ class Display {
   virtual void clear() = 0;
 };
 
-typedef struct pattern_s {
-  char *grid;
-  char *note;
-  char *velocity;
-  char *active;
-  char channel;
-} pattern_t;
+typedef struct pattern_t pattern_t;
 
 class MStep {
 public:
