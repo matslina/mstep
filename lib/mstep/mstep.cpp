@@ -66,6 +66,14 @@ MStep::MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
   activeColumn = -1;
 }
 
+static void displayInteger(Display *display, char *name, int value) {
+  char buf[20];
+  sprintf(buf, "  %d", value);
+  display->clear();
+  display->write(0, name);
+  display->write(1, buf);
+}
+
 void MStep::noteStart() {
   activeRow = -1;
   display->clear();
@@ -126,12 +134,7 @@ void MStep::noteTick() {
 }
 
 void MStep::tempoStart() {
-  char buf[20];
-
-  sprintf(buf, "  %d BPM", this->tempo);
-  display->clear();
-  display->write(0, F("TEMPO"));
-  display->write(1, buf);
+  displayInteger(display, F("TEMPO"), tempo);
 }
 
 void MStep::tempoStop() {
@@ -140,7 +143,6 @@ void MStep::tempoStop() {
 
 void MStep::tempoTick() {
   int mod;
-  char buf[10];
 
   mod = control->getUp() - control->getDown();
   if (!mod)
@@ -148,19 +150,11 @@ void MStep::tempoTick() {
 
   tempo = MIN(240, MAX(1, tempo + mod));
   stepDelay = (240000 / tempo) / gridWidth;
-  sprintf(buf, "  %d BPM", this->tempo);
-  display->clear();
-  display->write(0, F("TEMPO"));
-  display->write(1, buf);
+  displayInteger(display, F("TEMPO"), tempo);
 }
 
 void MStep::patternStart() {
-  char buf[20];
-
-  sprintf(buf, "  %d", activePattern);
-  display->clear();
-  display->write(0, F("PATTERN"));
-  display->write(1, buf);
+  displayInteger(display, F("PATTERN"), activePattern);
 }
 
 void MStep::patternStop() {
@@ -169,18 +163,13 @@ void MStep::patternStop() {
 
 void MStep::patternTick() {
   int mod;
-  char buf[10];
 
   mod = control->getUp() - control->getDown();
   if (!mod)
     return;
 
   activePattern = MIN(gridHeight - 1, MAX(0, activePattern + mod));
-  draw();
-  sprintf(buf, "  %d", activePattern);
-  display->clear();
-  display->write(0, F("PATTERN"));
-  display->write(1, buf);
+  displayInteger(display, F("PATTERN"), activePattern);
 }
 
 void MStep::playStart() {
