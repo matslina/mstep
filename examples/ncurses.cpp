@@ -132,36 +132,60 @@ private:
 };
 
 
+struct note {
+  int number;
+  int velocity;
+  int channel;
+};
+
+bool noteCmp(struct note a, struct note b) {
+  if (a.number < b.number)
+    return true;
+  if (a.number ==  b.number) {
+    if (a.channel < b.channel)
+      return true;
+    if (a.channel == b.channel)
+      if (a.velocity < b.velocity)
+	return true;
+  }
+  return false;
+}
+
 class CursesMIDI : public MIDI {
 public:
   WINDOW *win;
   pthread_mutex_t *mutex_curses;
   int rows;
-  vector<char> *active;
+  vector<struct note> *active;
 
   CursesMIDI(pthread_mutex_t *mutex_curses, int x, int y, int rows) {
     this->mutex_curses = mutex_curses;
     this->rows = rows;
     this->win = newwin(this->rows, 40, y, x);
-    this->active = new vector<char>();
+    this->active = new vector<struct note>();
     box(this->win, 0, 0);
     mvwaddstr(this->win, 0, 2, "MIDI");
     wrefresh(win);
   }
 
-  void noteOn(int channel, int note, int velocity) {
+  void noteOn(int channel, int number, int velocity) {
     const char *notestr[] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
     char buf[100];
+    struct note note;;
 
     if (velocity == 0) {
       for (int i = 0; i < active->size(); i++)
-	if (active->at(i) == note) {
+	if (active->at(i).number == number &&
+	    active->at(i).channel == channel) {
 	  active->erase(active->begin() + i);
 	  break;
 	}
     } else {
+      note.number = number;
+      note.velocity = velocity;
+      note.channel = channel;
       active->push_back(note);
-      sort(active->begin(), active->end());
+      sort(active->begin(), active->end(), noteCmp);
     }
 
     werase(win);
@@ -169,12 +193,11 @@ public:
     mvwaddstr(this->win, 0, 2, "MIDI");
 
     for (int i = 0; i < MIN(active->size(), rows - 2); i++) {
-      note = active->at(i);
       sprintf(buf, "[%d] %s%d (%d)",
-	      channel,
-	      notestr[active->at(i) % 12],
-	      active->at(i) / 12 - 1,
-	      127);
+	      active->at(i).channel,
+	      notestr[active->at(i).number % 12],
+	      active->at(i).number / 12 - 1,
+	      active->at(i).velocity);
       mvwaddstr(this->win, 1 + i, 1, buf);
     }
     if (active->size() > rows - 2)
