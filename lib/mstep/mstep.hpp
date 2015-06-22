@@ -68,7 +68,6 @@ private:
   char gridWidth;
   char gridHeight;
   int tempo;
-  int stepDelay;
   void (*sleep)(unsigned long);
   unsigned long (*time)(void);
   void displayStartupSequence();

@@ -59,7 +59,6 @@ MStep::MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
 
   activePattern = 0;
   tempo = DEFAULT_TEMPO;
-  stepDelay = (240000 / tempo) / gridWidth;
   activeRow = -1;
   activeColumn = -1;
 }
@@ -147,7 +146,6 @@ void MStep::tempoTick() {
     return;
 
   tempo = MIN(240, MAX(1, tempo + mod));
-  stepDelay = (240000 / tempo) / gridWidth;
   displayInteger(display, F("TEMPO"), tempo);
 }
 
@@ -232,8 +230,8 @@ int MStep::playTick() {
   }
 
   // schedule next step
-  // TODO: remove stepDelay variable and recalculate from tempo
-  playNext += stepDelay;
+  playNext += (240000 / tempo) / gridWidth;
+
   return MAX(0, playNext - time());
 }
 
