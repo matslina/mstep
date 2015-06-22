@@ -79,6 +79,10 @@ private:
   void play(char column);
   char activeRow;
   char activeColumn;
+  unsigned long int playNext;
+  void playStart();
+  void playStop();
+  void playTick();
   void tempoStart();
   void tempoStop();
   void tempoTick();

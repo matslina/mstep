@@ -135,7 +135,7 @@ void MStep::tempoStart() {
 }
 
 void MStep::tempoStop() {
-  // TODO: remove method if it's not needed
+  // TODO: remove if redundant
 }
 
 void MStep::tempoTick() {
@@ -164,7 +164,7 @@ void MStep::patternStart() {
 }
 
 void MStep::patternStop() {
-  // TODO: remove method if it's not needed
+  // TODO: remove if redundant
 }
 
 void MStep::patternTick() {
@@ -183,14 +183,75 @@ void MStep::patternTick() {
   display->write(1, buf);
 }
 
+void MStep::playStart() {
+  // schedule next step to happen immediately
+  playNext = time();
+
+  // pretend we just played the final column so that the next
+  // playTick() progresses to the first column to start playback. note
+  // that we overlay a hline but never call draw(), so playTick() will
+  // clear it in the next invocation and the user only sees a column
+  // light up in row 0. A bit of a kludge... =/
+  activeColumn = gridWidth - 1;
+  overlayVline(activeColumn);
+}
+
+void MStep::playStop() {
+  // send note off for notes currently on
+  for (int i = 0; i < gridHeight; i ++) {
+    if (pattern[activePattern].active[i] >= 0) {
+      midi->noteOn(0, pattern[activePattern].active[i], 0);
+      pattern[activePattern].active[i] = -1;
+    }
+  }
+
+  // and clear the grid
+  overlayVline(activeColumn);
+  activeColumn = -1;
+  draw();
+}
+
+void MStep::playTick() {
+  int pad;
+  char *grid = pattern[activePattern].grid;
+  char *note = pattern[activePattern].note;
+  char *velocity = pattern[activePattern].velocity;
+  char *active = pattern[activePattern].active;
+
+  if (playNext > time())
+    return; // FIXME: return next - time()
+
+  // step to next column and update grid
+  overlayVline(activeColumn);
+  activeColumn = (activeColumn + 1) % gridWidth;
+  overlayVline(activeColumn);
+  draw();
+
+  for (int i = 0; i < gridHeight; i ++) {
+    // note off for currently playing notes
+    if (active[i] >= 0) {
+      midi->noteOn(9, active[i], 0); // FIXME: don't hardcode channel
+      active[i] = -1;
+    }
+
+    // note on according to the grid
+    pad = i * gridWidth + activeColumn;
+    if (grid[pad / 8] & (1 << (pad % 8))) {
+      midi->noteOn(9, note[i], velocity[i]); // FIXME: don't hardcode channel
+      active[i] = note[i];
+    }
+  }
+
+  // schedule next step
+  // TODO: remove stepDelay variable and recalculate from tempo
+  playNext += stepDelay;
+}
+
+
 void MStep::run() {
   char row, column;
-  unsigned long playNext;
   int pad;
   int event;
-  int noteValuePrev;
-  int noteValue;
-  char buf[10];
   int mode;
 
   // displayStartupSequence();
@@ -201,30 +262,19 @@ void MStep::run() {
   while (1) {
     event = control->getEvent();
 
+    // special treatment of quit and play events, coz they're special.
     if (event & Control::QUIT)
       break;
-
     if (event & Control::PLAY) {
-      if (mode & Control::PLAY) {
-	overlayVline(activeColumn);
-	draw();
-	for (int i = 0; i < gridHeight; i ++) {
-	  if (pattern[activePattern].active[i] >= 0) {
-	    midi->noteOn(0, pattern[activePattern].active[i], 0);
-	    pattern[activePattern].active[i] = -1;
-	  }
-	}
-	mode &= ~Control::PLAY;
-	control->indicate(mode);
-      } else {
-	mode |= Control::PLAY;
-	activeColumn = gridWidth - 1;
-	overlayVline(activeColumn);
-	playNext = time();
-	control->indicate(mode);
-      }
+      if (mode & Control::PLAY)
+	playStop();
+      else
+	playStart();
+      mode ^= event & Control::PLAY;
+      control->indicate(mode);
     }
 
+    // only process event if it's unambiguous and it isn't garbage
     if (event && !(event & (event - 1)) &&
 	event & (Control::NOTE | Control::TEMPO | Control::PATTERN)) {
 
@@ -263,54 +313,32 @@ void MStep::run() {
       control->indicate(mode);
     }
 
-    if (mode & Control::NOTE)
-      noteTick();
-    else
+    // unless in note mode, grid press updates grid state
+    if (!(mode & Control::NOTE)) {
       while (grid->getPress(&row, &column)) {
 	pad = row * gridWidth + column;
 	pattern[activePattern].grid[pad >> 3] ^= 1 << (pad & 0x7);
-	draw();
       }
+      draw();
+    }
 
-    if (mode & Control::TEMPO)
+    // tick() according to mode
+    if (mode & Control::PLAY)
+      playTick();
+
+    switch (mode & ~Control::PLAY) {
+    case Control::NOTE:
+      noteTick();
+      break;
+    case Control::TEMPO:
       tempoTick();
-    else if (mode & Control::PATTERN)
+      break;
+    case Control::PATTERN:
       patternTick();
-
-    if (mode & Control::PLAY) {
-      if (playNext <= time()) {
-	overlayVline(activeColumn);
-	activeColumn = (activeColumn + 1) % gridWidth;
-	play(activeColumn);
-	playNext += stepDelay;
-	overlayVline(activeColumn);
-	draw();
-      }
-      sleep(MIN(30, MAX(0, playNext - time())));
-    }
-    else
-      sleep(30);
-  }
-}
-
-void MStep::play(char column) {
-  int pad;
-  char *grid = pattern[activePattern].grid;
-  char *note = pattern[activePattern].note;
-  char *velocity = pattern[activePattern].velocity;
-  char *active = pattern[activePattern].active;
-
-  for (int i = 0; i < gridHeight; i ++) {
-    if (active[i] >= 0) {
-      midi->noteOn(9, active[i], 0);
-      active[i] = -1;
+      break;
     }
 
-    pad = i * gridWidth + column;
-    if (grid[pad / 8] & (1 << (pad % 8))) {
-      midi->noteOn(9, note[i], velocity[i]);
-      active[i] = note[i];
-    }
+    sleep(30);
   }
 }
 
