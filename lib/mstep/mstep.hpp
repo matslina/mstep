@@ -77,10 +77,12 @@ private:
   void draw();
   void overlayVline(char column);
   void overlayHline(char row);
+  void overlayClear();
   void play(char column);
   char activeRow;
   char activeColumn;
   unsigned long int playNext;
+  int playPattern;
   void playStart();
   void playStop();
   int playTick();

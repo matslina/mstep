@@ -167,6 +167,8 @@ void MStep::patternTick() {
 
   activePattern = MIN(gridHeight - 1, MAX(0, activePattern + mod));
   displayInteger(display, F("PATTERN"), activePattern);
+  overlayClear();
+  draw();
 }
 
 void MStep::channelStart() {
@@ -192,6 +194,8 @@ void MStep::channelTick() {
 }
 
 void MStep::playStart() {
+  playPattern = activePattern;
+
   // schedule next step to happen immediately
   playNext = time();
 
@@ -207,10 +211,10 @@ void MStep::playStart() {
 void MStep::playStop() {
   // send note off for notes currently on
   for (int i = 0; i < gridHeight; i ++) {
-    if (pattern[activePattern].active[i] >= 0) {
-      midi->noteOn(pattern[activePattern].channel,
-		   pattern[activePattern].active[i], 0);
-      pattern[activePattern].active[i] = -1;
+    if (pattern[playPattern].active[i] >= 0) {
+      midi->noteOn(pattern[playPattern].channel,
+		   pattern[playPattern].active[i], 0);
+      pattern[playPattern].active[i] = -1;
     }
   }
 
@@ -222,35 +226,45 @@ void MStep::playStop() {
 
 int MStep::playTick() {
   int pad;
-  char *grid = pattern[activePattern].grid;
-  char *note = pattern[activePattern].note;
-  char *velocity = pattern[activePattern].velocity;
-  char *active = pattern[activePattern].active;
-  char channel = pattern[activePattern].channel;
+  pattern_t *p;
   unsigned long int now;
 
   now = time();
   if (playNext > now)
     return playNext - now;
 
-  // step to next column and update grid
-  overlayVline(activeColumn);
-  activeColumn = (activeColumn + 1) % gridWidth;
-  overlayVline(activeColumn);
-  draw();
 
+  // note off for currently playing notes
+  p = &pattern[playPattern];
   for (int i = 0; i < gridHeight; i ++) {
-    // note off for currently playing notes
-    if (active[i] >= 0) {
-      midi->noteOn(channel, active[i], 0);
-      active[i] = -1;
+    if (p->active[i] >= 0) {
+      midi->noteOn(p->channel, p->active[i], 0);
+      p->active[i] = -1;
     }
+  }
 
-    // note on according to the grid
+  // step one column forward. currently played pattern may not be the
+  // one currently displayed (activePattern), so take care when
+  // drawing those columns. when wrapping around we always start
+  // playing the displayed pattern.
+  if (playPattern == activePattern)
+    overlayVline(activeColumn);
+  if (++activeColumn == gridWidth) {
+    activeColumn = 0;
+    playPattern = activePattern;
+  }
+  if (playPattern == activePattern) {
+   overlayVline(activeColumn);
+   draw();
+  }
+
+  // note on according to the grid
+  p = &pattern[playPattern];
+  for (int i = 0; i < gridHeight; i ++) {
     pad = i * gridWidth + activeColumn;
-    if (grid[pad / 8] & (1 << (pad % 8))) {
-      midi->noteOn(channel, note[i], velocity[i]);
-      active[i] = note[i];
+    if (p->grid[pad / 8] & (1 << (pad % 8))) {
+      midi->noteOn(p->channel, p->note[i], p->velocity[i]);
+      p->active[i] = p->note[i];
     }
   }
 
@@ -341,8 +355,8 @@ void MStep::run() {
       while (grid->getPress(&row, &column)) {
 	pad = row * gridWidth + column;
 	pattern[activePattern].grid[pad >> 3] ^= 1 << (pad & 0x7);
+	draw();
       }
-      draw();
     }
 
     // tick() according to mode
@@ -381,6 +395,11 @@ void MStep::overlayVline(char column) {
 void MStep::overlayHline(char row) {
   for (int i = row * gridWidth; i < (row + 1) * gridWidth; i++)
     gridOverlay[i >> 3] ^= 1 << (i & 7);
+}
+
+void MStep::overlayClear() {
+  for (int i = 0; i < gridStateSize; i++)
+    gridOverlay[i] = 0;
 }
 
 void MStep::displayStartupSequence() {
