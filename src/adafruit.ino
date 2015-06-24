@@ -22,7 +22,7 @@ Adafruit_TrellisSet trellis =  Adafruit_TrellisSet(&matrix0, &matrix1,
 
 
 class AdaGrid : public Grid {
-  bool eventPress(char *row, char *column) {
+  bool getPress(char *row, char *column) {
     static bool needRead = true;
     static int i;
 
@@ -76,8 +76,20 @@ class AdaMIDI : public MIDI {
 };
 
 class AdaControl : public Control {
-  bool eventShutdown() {
-    return false;
+
+  void indicate(int event) {
+  }
+
+  int getEvent() {
+    return 0;
+  }
+
+  int getUp() {
+    return 0;
+  }
+
+  int getDown() {
+    return 0;
   }
 
   bool eventPlayPause() {
@@ -110,7 +122,12 @@ class AdaControl : public Control {
 };
 
 class AdaDisplay : public Display {
-  void write() {}
+
+  void write(int row, char *msg) {
+  }
+
+  void clear() {
+  }
 };
 
 AdaGrid grid = AdaGrid();
