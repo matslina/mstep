@@ -178,7 +178,6 @@ void MStep::patternTick() {
 
   activePattern = MIN(gridHeight - 1, MAX(0, activePattern + mod));
   displayInteger(display, F("PATTERN"), activePattern);
-  overlayClear();
   draw();
 }
 
@@ -244,7 +243,6 @@ int MStep::playTick() {
   if (playNext > now)
     return playNext - now;
 
-
   // note off for currently playing notes
   p = &pattern[playPattern];
   for (int i = 0; i < gridHeight; i ++) {
@@ -258,16 +256,13 @@ int MStep::playTick() {
   // one currently displayed (activePattern), so take care when
   // drawing those columns. when wrapping around we always start
   // playing the displayed pattern.
-  if (playPattern == activePattern)
-    overlayVline(activeColumn);
+  overlayVline(activeColumn);
   if (++activeColumn == gridWidth) {
     activeColumn = 0;
     playPattern = activePattern;
   }
-  if (playPattern == activePattern) {
-   overlayVline(activeColumn);
-   draw();
-  }
+  overlayVline(activeColumn);
+  draw();
 
   // note on according to the grid
   p = &pattern[playPattern];
@@ -394,9 +389,13 @@ void MStep::run() {
 }
 
 void MStep::draw() {
-  for (int i = 0; i < gridStateSize; i++)
-    gridBuf[i] = pattern[activePattern].grid[i] ^ gridOverlay[i];
-  grid->draw(gridBuf);
+  if (activePattern == playPattern) {
+    for (int i = 0; i < gridStateSize; i++)
+      gridBuf[i] = pattern[playPattern].grid[i] ^ gridOverlay[i];
+    grid->draw(gridBuf);
+  }
+  else
+    grid->draw(pattern[activePattern].grid);
 }
 
 void MStep::overlayVline(char column) {
@@ -407,11 +406,6 @@ void MStep::overlayVline(char column) {
 void MStep::overlayHline(char row) {
   for (int i = row * gridWidth; i < (row + 1) * gridWidth; i++)
     gridOverlay[i >> 3] ^= 1 << (i & 7);
-}
-
-void MStep::overlayClear() {
-  for (int i = 0; i < gridStateSize; i++)
-    gridOverlay[i] = 0;
 }
 
 void MStep::displayStartupSequence() {
