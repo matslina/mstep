@@ -146,10 +146,6 @@ void MStep::tempoStart() {
   displayInteger(display, F("TEMPO"), tempo);
 }
 
-void MStep::tempoStop() {
-  // TODO: remove if redundant
-}
-
 void MStep::tempoTick() {
   int mod;
 
@@ -163,10 +159,6 @@ void MStep::tempoTick() {
 
 void MStep::patternStart() {
   displayInteger(display, F("PATTERN"), activePattern);
-}
-
-void MStep::patternStop() {
-  // TODO: remove if redundant
 }
 
 void MStep::patternTick() {
@@ -183,10 +175,6 @@ void MStep::patternTick() {
 
 void MStep::channelStart() {
   displayInteger(display, F("CHANNEL"), pattern[activePattern].channel);
-}
-
-void MStep::channelStop() {
-  // TODO: remove if redundant
 }
 
 void MStep::channelTick() {
@@ -321,15 +309,6 @@ void MStep::run() {
       switch (mode & ~Control::PLAY) {
       case Control::NOTE:
 	noteStop();
-	break;
-      case Control::TEMPO:
-	tempoStop();
-	break;
-      case Control::PATTERN:
-	patternStop();
-	break;
-      case Control::CHANNEL:
-	channelStop();
 	break;
       }
 
