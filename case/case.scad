@@ -20,18 +20,10 @@ module trellis_top(rows, cols, padgap) {
 module trellis_bottom(rows, cols) {
   difference() {
     square([60 * cols, 60 * rows]);
-    // trellis mount holes
-    for (i=[0:rows-1]) {
-      for (j=[0:cols-1]) {
-        translate([60 * j + 15, 60 * i +30])
-          circle(1.5);
-        translate([60 * j + 45, 60 * i + 30])
-          circle(1.5);
-      }
-    }
+    // TODO: add slots for supports here
+    // TODO: add holes for pcbs here
   }
 }
-
 
 
 // Control panel
@@ -110,51 +102,6 @@ module mstep_bottom(p) {
       controls_bottom(37, 240);
 }
 
-module wall_joint(t) {
-  polygon([[-1,-1], [3, 3],
-           [t, 3], [t, t + 1],
-           [-1, t + 1], [-1, 0],
-           [0, 0]]);
-}
-
-module wall_south(length, thickness) {
-  difference() {
-    square([length, thickness]);
-    wall_joint(thickness);
-    translate([length, 0, 0])
-      mirror([1,0,0])
-        wall_joint(thickness);
-  }
-}
-
-module hex_spacer(size) {
-  for (i=[0:3])
-    rotate([0,0,i*60])
-      square([size / sqrt(3), size],
-             center=true);
-}
-
-module wall_west(height, thickness) {
-  spacer_size = 7; //6.35;
-  difference() {
-    square([thickness, height]);
-    wall_south(thickness*2, thickness);
-    translate([thickness - 4, height - 3, 0])
-      square([4, 4]);
-    translate([thickness, thickness * 2, 0])
-      hex_spacer(spacer_size);
-    translate([thickness, height - thickness * 2, 0])
-      hex_spacer(spacer_size);
-  }
-}
-
-module wall_east(height, thickness) {
-  translate([thickness, 0, 0])
-    mirror([1, 0, 0])
-      wall_west(height, thickness);
-}
-
-
 module MIDI() {
   circle(r=7.5);
   translate([-11.15, 0, 0])
@@ -192,6 +139,35 @@ module back_panel(height, width) {
   }
 }
 
+module	 trellis_support(n, height, lip, upper=false) {
+  material_thickness = 3;
+  trellis_thickness = 2.5;
+  tab_width = 20;
+
+  union() {
+    difference() {
+      square([n * 60 + 2 * lip,
+              height]);
+      translate([lip, height - trellis_thickness])
+        square([n * 60, 2 * trellis_thickness]);
+      for(i=[0:n-1])
+        translate([lip + 60 / 2 + i * 60 - tab_width / 2,
+                   height- material_thickness - trellis_thickness])
+          square([tab_width, 2 * material_thickness]);
+      for(i=[1:n-1])
+        translate([i * 60 - material_thickness / 2,
+                   upper ? height / 2 : 0])
+          square([material_thickness, height / 2]);
+    }
+    for(i=[0:n-1]) {
+      translate([lip + 60 / 2 + i * 60 - tab_width / 2,
+                 - material_thickness])
+        square([tab_width, material_thickness]);
+    }
+  }
+}
+
+
 //back_panel(30, 169);
 
 // power switch
@@ -207,18 +183,17 @@ color("red") difference() {
 
 translate([5, 5, 0]) {
   mstep_top(10);
-  translate([265, 0, 0])
-    wall_east(177, 8);
-  translate([265, 185, 0])
-    wall_west(177, 8);
-  translate([0, 185, 0])
+  translate([350, 0, 0])
     mstep_bottom(10);
-  translate([280, 260, 0])
-    rotate([0, 0, -90])
-      back_panel(21, 260 - 8);
-  translate([315, 260, 0])
-    rotate([0, 0, -90])
-      wall_south(260, 8);
+  translate([350, 190, 0])
+      back_panel(23, 260 - 8);
+  for(i=[0:2])
+    translate([290 + i * 27, 0, 0])
+        rotate([0, 0, 90])
+          trellis_support(2, 23, 2, true);
+  translate([0, 190, 0])
+    trellis_support(4, 23, 2, false);
+  
 }
 
 
@@ -226,4 +201,4 @@ translate([5, 5, 0]) {
 // bottom plate
 //square([240 + 20, 120 + 37 + 20]);
 
-// bottom wall
+
