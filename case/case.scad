@@ -1,4 +1,7 @@
 
+MATERIAL_THICKNESS = 3;
+
+
 // Trellis board matrix
 // Arguments 'rows' and 'cols' refers to number
 // of Trellis boards, not individual pads.
@@ -82,24 +85,24 @@ module pad_rect(w, h, pn, pe, ps, pw) {
 
 // The complete mstep front panel
 // With padding 'p'.
-module mstep_top(p) {
-  pad_rect(240, 120, p, p, p, p)
-    trellis_top(2, 4, 1);
+module mstep_top(w, h, p) {
+  pad_rect(60 * w, 60 * h, p, p, p, p)
+    trellis_top(3, 4, 1);
 
-  translate([0,130, 0])
-    pad_rect(240, 37, p, p, 0, p)
-      controls_top(6, 37, 240);
+  translate([0, 60 * h + p, 0])
+    pad_rect(60 * w, 37, p, p, 0, p)
+      controls_top(6, 37, 60 * w);
 }
 
 // The complete mstep bottom panel
 // With padding 'p'.
-module mstep_bottom(p) {
-  pad_rect(240, 120, p, p, p, p)
-    trellis_bottom(2, 4);
+module mstep_bottom(w, h, p) {
+  pad_rect(60 * w, 60 * h, p, p, p, p)
+    trellis_bottom(h, w);
 
-  translate([0,130, 0])
-    pad_rect(240, 37, p, p, 0, p)
-      controls_bottom(37, 240);
+  translate([0, 60 * h + p, 0])
+    pad_rect(60 * w, 37, p, p, 0, p)
+      controls_bottom(37, 60 * w);
 }
 
 module MIDI() {
@@ -164,6 +167,10 @@ module	 trellis_support(n, height, lip, upper=false) {
                  - material_thickness])
         square([tab_width, material_thickness]);
     }
+    translate([-material_thickness, height / 4])
+      square([material_thickness, height / 2]);
+    translate([n *60 + 2 * lip, height / 4])
+      square([material_thickness, height / 2]);
   }
 }
 
@@ -182,17 +189,18 @@ color("red") difference() {
 }
 
 translate([5, 5, 0]) {
-  mstep_top(10);
+  mstep_top(4, 3, 10);
   translate([350, 0, 0])
-    mstep_bottom(10);
-  translate([350, 190, 0])
-      back_panel(23, 260 - 8);
+    mstep_bottom(4, 3, 10);
+  translate([350, 250, 0])
+    back_panel(23, 260 - 8);
   for(i=[0:2])
     translate([290 + i * 27, 0, 0])
         rotate([0, 0, 90])
-          trellis_support(2, 23, 2, true);
-  translate([0, 190, 0])
-    trellis_support(4, 23, 2, false);
+          trellis_support(3, 23, 2, true);
+  for(i=[0:1])
+    translate([0, 250 + 27 * i, 0])
+      trellis_support(4, 23, 2, false);
   
 }
 
