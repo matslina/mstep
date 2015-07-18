@@ -1,6 +1,6 @@
 
 MATERIAL_THICKNESS = 3;
-
+TAB_WIDTH = 20;
 
 // Trellis board matrix
 // Arguments 'rows' and 'cols' refers to number
@@ -21,10 +21,23 @@ module trellis_top(rows, cols, padgap) {
 }
 
 module trellis_bottom(rows, cols) {
+  mt = MATERIAL_THICKNESS;
+  tw = TAB_WIDTH;
+
   difference() {
     square([60 * cols, 60 * rows]);
-    // TODO: add slots for supports here
-    // TODO: add holes for pcbs here
+    // vertical slots
+    for (i=[0:rows-1])
+      for (j=[0:cols-2])
+        translate([60 * j + 60 - mt / 2,
+                   60 * i + 30 - tw / 2])
+          square([mt, tw]);
+    // horizontal slots
+    for (i=[0:rows-2])
+      for (j=[0:cols-1])
+        translate([60 * j + 30 - tw / 2,
+                   60 * i + 60 - mt / 2])
+          square([tw, mt]);
   }
 }
 
