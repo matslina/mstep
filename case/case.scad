@@ -156,34 +156,45 @@ module back_panel(height, width) {
 }
 
 module	 trellis_support(n, height, lip, upper=false) {
-  material_thickness = 3;
-  trellis_thickness = 2.5;
-  tab_width = 20;
+  mt = MATERIAL_THICKNESS;
+  tw = TAB_WIDTH;
+
+  // thickness of trellis pcb and pad
+  tt = 2.5;
 
   union() {
     difference() {
-      square([n * 60 + 2 * lip,
-              height]);
-      translate([lip, height - trellis_thickness])
-        square([n * 60, 2 * trellis_thickness]);
+      square([n * 60 + 2 * lip, height]);
+
+      // pcb bed
+      translate([lip, height - tt])
+        square([n * 60, 2 * tt]);
+
+      // slots for pcb interconnects
       for(i=[0:n-1])
-        translate([lip + 60 / 2 + i * 60 - tab_width / 2,
-                   height- material_thickness - trellis_thickness])
-          square([tab_width, 2 * material_thickness]);
+        translate([lip + 60 / 2 + i * 60 - tw / 2,
+                   height - mt - tt])
+          square([tw, 2 * mt]);
+
+      // interlock slots
       for(i=[1:n-1])
-        translate([i * 60 - material_thickness / 2,
+        translate([i * 60 - mt / 2,
                    upper ? height / 2 : 0])
-          square([material_thickness, height / 2]);
+          square([mt, height / 2]);
     }
+
+    // tabs for bottom plate
     for(i=[0:n-1]) {
-      translate([lip + 60 / 2 + i * 60 - tab_width / 2,
-                 - material_thickness])
-        square([tab_width, material_thickness]);
+      translate([lip + 60 / 2 + i * 60 - tw / 2,
+                 -mt])
+        square([tw, mt]);
     }
-    translate([-material_thickness, height / 4])
-      square([material_thickness, height / 2]);
+
+    // tabs for walls
+    translate([-mt, height / 4])
+      square([mt, height / 2]);
     translate([n *60 + 2 * lip, height / 4])
-      square([material_thickness, height / 2]);
+      square([mt, height / 2]);
   }
 }
 
