@@ -1,37 +1,46 @@
+/*
+ * Enclosure for the MStep 4711.
+ *
+ * A matrix of Adafruit Trellis PCBs held up by
+ * vertical supports resting on a bottom plate.
+ *
+ * A control panel with push buttons, an LCD and a
+ * rotary encoder.
+ *
+ * Surrounding walls including a back wall with
+ * holes for MIDI ports, DC jack and power switch.
+ */
+
 
 MATERIAL_THICKNESS = 3;
 TAB_WIDTH = 20;
 
-// Trellis board matrix
-// Arguments 'rows' and 'cols' refers to number
-// of Trellis boards, not individual pads.
-// Each pad surrounded by a 'padgap' mm gap.
-// Object will be 60*rows x 60*cols mm.
-// This object only covers the trellis PCBs.
-module trellis_top(rows, cols, padgap) {
+module grid_top(rows, cols, padgap) {
   difference() {
     square([60 * cols, 60 * rows]);
     for (i=[0:rows*4-1])
-    for (j=[0:cols*4-1])
-      translate([2.5 - padgap + j * 15,
-                2.5 - padgap + i * 15,
-                0])
-        square(10 + 2 * padgap);
+      for (j=[0:cols*4-1])
+        translate([2.5 - padgap + j * 15,
+                  2.5 - padgap + i * 15,
+                  0])
+          square(10 + 2 * padgap);
   }
 }
 
-module trellis_bottom(rows, cols) {
+module grid_bottom(rows, cols) {
   mt = MATERIAL_THICKNESS;
   tw = TAB_WIDTH;
 
   difference() {
     square([60 * cols, 60 * rows]);
+
     // vertical slots
     for (i=[0:rows-1])
       for (j=[0:cols-2])
         translate([60 * j + 60 - mt / 2,
                    60 * i + 30 - tw / 2])
           square([mt, tw]);
+
     // horizontal slots
     for (i=[0:rows-2])
       for (j=[0:cols-1])
@@ -41,12 +50,6 @@ module trellis_bottom(rows, cols) {
   }
 }
 
-
-// Control panel
-// Holds 'buttons' keyboard switches, one 16x LCD
-// display and one shaft encoder.
-// Parameters 'height' and 'width' refer to size
-// of the control panel.
 module controls_top(buttons, height, width) {
   btn_size = 18.5;
   lcd_height = 25;
@@ -78,11 +81,6 @@ module controls_bottom(height, width) {
 }
 
 
-// Adds padding around a rectangular object.
-// Object must be of width 'w' and height 'h'.
-// Padding is added on the north, east, south and
-// west sides according to 'pn', 'pe', 'ps' and
-// 'pw' respectively.
 module pad_rect(w, h, pn, pe, ps, pw) {
   union () {
     translate([pw, ps, 0]) child();
@@ -96,27 +94,6 @@ module pad_rect(w, h, pn, pe, ps, pw) {
   }
 }
 
-// The complete mstep front panel
-// With padding 'p'.
-module mstep_top(w, h, p) {
-  pad_rect(60 * w, 60 * h, p, p, p, p)
-    trellis_top(3, 4, 1);
-
-  translate([0, 60 * h + p, 0])
-    pad_rect(60 * w, 37, p, p, 0, p)
-      controls_top(6, 37, 60 * w);
-}
-
-// The complete mstep bottom panel
-// With padding 'p'.
-module mstep_bottom(w, h, p) {
-  pad_rect(60 * w, 60 * h, p, p, p, p)
-    trellis_bottom(h, w);
-
-  translate([0, 60 * h + p, 0])
-    pad_rect(60 * w, 37, p, p, 0, p)
-      controls_bottom(37, 60 * w);
-}
 
 module MIDI() {
   circle(r=7.5);
@@ -198,10 +175,44 @@ module	 trellis_support(n, height, lip, upper=false) {
   }
 }
 
+module the_whole_shebang(w, h) {
+  w = 4;
+  h = 3;
+  p = 10;
 
-//back_panel(30, 169);
+  // top plate
+  union() {
+    pad_rect(60 * w, 60 * h, p, p, p, p)
+      grid_top(h, w, 1);
+    translate([0, 60 * h + p, 0])
+      pad_rect(60 * w, 37, p, p, 0, p)
+        controls_top(6, 37, 60 * w);
+  }
 
-// power switch
+  // bottom plate
+  translate([350, 0])
+  union() {
+    pad_rect(60 * w, 60 * h, p, p, p, p)
+      grid_bottom(h, w);
+    translate([0, 60 * h + p, 0])
+      pad_rect(60 * w, 37, p, p, 0, p)
+        controls_bottom(37, 60 * w);
+  }
+
+  // trellis pcb supports
+  for(i=[0:w-2])
+    translate([290 + i * 27, 0, 0])
+        rotate([0, 0, 90])
+          trellis_support(3, 23, 2, true);
+  for(i=[0:h-1])
+    translate([0, 250 + 27 * i, 0])
+      trellis_support(4, 23, 2, false);
+
+  // walls
+  translate([350, 250, 0])
+    back_panel(23, 260 - 8);
+  
+}
 
 // Ponoko P3 guide
 P3w = 790;
@@ -212,25 +223,4 @@ color("red") difference() {
     square([P3w - 1, P3h - 1]);
 }
 
-translate([5, 5, 0]) {
-  mstep_top(4, 3, 10);
-  translate([350, 0, 0])
-    mstep_bottom(4, 3, 10);
-  translate([350, 250, 0])
-    back_panel(23, 260 - 8);
-  for(i=[0:2])
-    translate([290 + i * 27, 0, 0])
-        rotate([0, 0, 90])
-          trellis_support(3, 23, 2, true);
-  for(i=[0:1])
-    translate([0, 250 + 27 * i, 0])
-      trellis_support(4, 23, 2, false);
-  
-}
-
-
-
-// bottom plate
-//square([240 + 20, 120 + 37 + 20]);
-
-
+translate([5, 5, 0]) the_whole_shebang(4, 3);
