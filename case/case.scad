@@ -13,7 +13,42 @@
 
 
 MATERIAL_THICKNESS = 3;
-TAB_WIDTH = 20;
+TAB_WIDTH = 10;
+
+
+module pad_rect(w, h, pn, pe, ps, pw) {
+  union () {
+    translate([pw, ps, 0]) child();
+    translate([0, ps, 0])
+      square([pw, h]);
+    translate([pw + w, 0, 0])
+      square([pe, h + ps]);
+    translate([0, ps + h, 0])
+      square([pw + pe + w, pn]);
+    square([pw + w, ps]);
+  }
+}
+
+module tabbed_wall(w, h, male) {
+  tw = TAB_WIDTH;
+  mt = MATERIAL_THICKNESS;
+
+  foo = (h - tw) / 2;
+
+  difference() {
+    square([w, h]);
+    if (male) {
+      square([mt, foo]);
+      translate([0, foo + tw]) square([mt, foo]);
+      translate([w - mt, 0]) square([mt, foo]);
+      translate([w - mt, foo + tw]) square([mt, foo]);
+    } else {
+      translate([0, foo]) square([mt, tw]);
+      translate([w - mt, foo]) square([mt, tw]);
+    }
+  }
+}
+
 
 module grid_top(rows, cols, padgap) {
   difference() {
@@ -26,6 +61,8 @@ module grid_top(rows, cols, padgap) {
           square(10 + 2 * padgap);
   }
 }
+
+
 
 module grid_bottom(rows, cols) {
   mt = MATERIAL_THICKNESS;
@@ -80,21 +117,6 @@ module controls_bottom(height, width) {
   square([width, height]);
 }
 
-
-module pad_rect(w, h, pn, pe, ps, pw) {
-  union () {
-    translate([pw, ps, 0]) child();
-    translate([0, ps, 0])
-      square([pw, h]);
-    translate([pw + w, 0, 0])
-      square([pe, h + ps]);
-    translate([0, ps + h, 0])
-      square([pw + pe + w, pn]);
-    square([pw + w, ps]);
-  }
-}
-
-
 module MIDI() {
   circle(r=7.5);
   translate([-11.15, 0, 0])
@@ -120,7 +142,7 @@ module power_switch() {
 
 module back_panel(height, width) {
   difference() {
-    square([width, height]);
+    tabbed_wall(width, height, false);
     translate([20, height / 2, 0])
       DC();
     translate([50, height / 2, 0])
@@ -138,6 +160,8 @@ module	 trellis_support(n, height, lip, upper=false) {
 
   // thickness of trellis pcb and pad
   tt = 2.5;
+  // pcb interconnect slot width
+  piw = 20;
 
   union() {
     difference() {
@@ -149,9 +173,9 @@ module	 trellis_support(n, height, lip, upper=false) {
 
       // slots for pcb interconnects
       for(i=[0:n-1])
-        translate([lip + 60 / 2 + i * 60 - tw / 2,
+        translate([lip + 60 / 2 + i * 60 - piw / 2,
                    height - mt - tt])
-          square([tw, 2 * mt]);
+          square([piw, 2 * mt]);
 
       // interlock slots
       for(i=[1:n-1])
@@ -210,8 +234,13 @@ module the_whole_shebang(w, h) {
 
   // walls
   translate([350, 250, 0])
-    back_panel(23, 260 - 8);
-  
+    back_panel(23, w * 60 + p * 2);
+  translate([350, 275])
+    tabbed_wall(w * 60 + p * 2, 23, false);
+  translate([635, 0]) rotate([0, 0, 90])
+    tabbed_wall(h * 60 + p * 2 + 37, 23, true);
+  translate([665, 0]) rotate([0, 0, 90])
+    tabbed_wall(h * 60 + p * 2 + 37, 23, true);
 }
 
 // Ponoko P3 guide
