@@ -72,7 +72,6 @@ private:
   void overlayVline(char column);
   void overlayHline(char row);
   char activeRow;
-  char activeColumn;
   unsigned long int playNext;
   int playPattern;
   void playStart();

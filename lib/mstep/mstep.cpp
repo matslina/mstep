@@ -18,6 +18,7 @@ struct pattern_t {
   char *active;
   char channel;
   char activeChannel;
+  char column;
 };
 
 
@@ -67,12 +68,12 @@ MStep::MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
     for (int j = 0; j < gridHeight; j++) pattern[i].note[j] = 36 + j;
     for (int j = 0; j < gridHeight; j++) pattern[i].velocity[j] = 127;
     for (int j = 0; j < gridHeight; j++) pattern[i].active[j] = -1;
+    pattern[i].column = -1;
   }
 
   activePattern = 0;
   tempo = DEFAULT_TEMPO;
   activeRow = -1;
-  activeColumn = -1;
 }
 
 static void displayInteger(Display *display, char *name, int value) {
@@ -202,8 +203,8 @@ void MStep::playStart() {
   // that we overlay a hline but never call draw(), so playTick() will
   // clear it in the next invocation and the user only sees a column
   // light up in row 0. A bit of a kludge... =/
-  activeColumn = gridWidth - 1;
-  overlayVline(activeColumn);
+  pattern[playPattern].column = gridWidth - 1;
+  overlayVline(pattern[playPattern].column);
 }
 
 void MStep::playStop() {
@@ -217,8 +218,8 @@ void MStep::playStop() {
   }
 
   // and clear the grid
-  overlayVline(activeColumn);
-  activeColumn = -1;
+  overlayVline(pattern[playPattern].column);
+  pattern[playPattern].column = -1;
   draw();
 }
 
@@ -244,18 +245,21 @@ int MStep::playTick() {
   // one currently displayed (activePattern), so take care when
   // drawing those columns. when wrapping around we always start
   // playing the displayed pattern.
-  overlayVline(activeColumn);
-  if (++activeColumn == gridWidth) {
-    activeColumn = 0;
+  overlayVline(p->column);
+  if (++p->column == gridWidth) {
+    if (playPattern != activePattern) {
+      p->column = -1;
+      p = &pattern[activePattern];
+    }
     playPattern = activePattern;
+    p->column = 0;
   }
-  overlayVline(activeColumn);
+  overlayVline(p->column);
   draw();
 
   // note on according to the grid
-  p = &pattern[playPattern];
   for (int i = 0; i < gridHeight; i ++) {
-    pad = i * gridWidth + activeColumn;
+    pad = i * gridWidth + p->column;
     if (p->grid[pad / 8] & (1 << (pad % 8))) {
       midi->noteOn(p->channel, p->note[i], p->velocity[i]);
       p->active[i] = p->note[i];
