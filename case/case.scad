@@ -49,7 +49,7 @@ module tabbed_wall(w, h, male) {
   }
 }
 
-
+// FIXME not sure this is correct
 module grid_top(rows, cols, padgap) {
   difference() {
     square([60 * cols, 60 * rows]);
@@ -87,8 +87,17 @@ module grid_bottom(rows, cols) {
   }
 }
 
+module pushbutton() {
+  difference() {
+    circle(r=8);
+    translate([7.5, -5])
+      square([10, 10]);
+    translate([-8.5, -5])
+      square([1, 10]);
+  }
+}
+
 module controls_top(buttons, height, width) {
-  btn_size = 18.5;
   lcd_height = 25;
   lcd_width = 70;
   shaft_size = 6.4;
@@ -96,11 +105,10 @@ module controls_top(buttons, height, width) {
 
   difference() {
     square([width, height]);
-    for (i=[0:buttons-1])
-      translate([0.3*btn_size + i * (btn_size + 1.5),
-                 height / 2 - btn_size / 2,
-                 0])
-        square(btn_size);
+    for (i=[0:3])
+      for (j=[0:1])
+        translate([15 + i * 30, 15 + j * 30])
+          pushbutton();
     translate([240 -1.1 * knob_size,
                height / 2,
                0])
