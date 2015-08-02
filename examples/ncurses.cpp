@@ -437,7 +437,7 @@ int main(int argc, char *argv[]) {
   if (argc > 1) {
     sscanf(argv[1], "%d", &width);
     if (argc > 2)
-      sscanf(argv[1], "%d", &height);
+      sscanf(argv[2], "%d", &height);
     else
       height = width;
     if (argc > 3) {
