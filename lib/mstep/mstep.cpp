@@ -144,8 +144,8 @@ void MStep::noteTick() {
   }
 
   if (rowChanged || noteChanged) {
-    sprintf(buf, F("  %d: %s%d"),
-	    this->activeRow, notes[value % 12], value / 12 - 1);
+    sprintf(buf, F("  %d: %s%d (%d)"),
+	    this->activeRow, notes[value % 12], value / 12 - 1, value);
     display->clear();
     display->write(0, F("NOTE"));
     display->write(1, buf);
@@ -292,10 +292,15 @@ void MStep::run() {
   int mode;
   int sleepDuration;
 
-  // displayStartupSequence();
+  display->write(0, F("initializing"));
+  displayStartupSequence();
   mode = 0;
   control->indicate(mode);
   draw();
+  while (grid->getPress(&row, &column));
+  display->clear();
+  display->write(0, F("MStep 4711"));
+  display->write(1, F("  ready"));
 
   while (1) {
     sleepDuration = 30;
@@ -403,4 +408,16 @@ void MStep::overlayHline(char row) {
 }
 
 void MStep::displayStartupSequence() {
+  for (int i=0; i < gridWidth * 2; i++) {
+    overlayVline(i % gridWidth);
+    draw();
+  }
+
+  for (int i=0; i < gridHeight * 2; i++) {
+    overlayHline(i % gridHeight);
+    draw();
+  }
+
+  for (int i=0; i < gridStateSize; i++)
+    gridOverlay[i] = 0;
 }
