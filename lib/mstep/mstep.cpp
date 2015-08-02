@@ -69,6 +69,17 @@ MStep::MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
     for (int j = 0; j < gridHeight; j++) pattern[i].velocity[j] = 127;
     for (int j = 0; j < gridHeight; j++) pattern[i].active[j] = -1;
     pattern[i].column = -1;
+
+    // hard coded volca notes as defaults
+    // hack hack hack hack hack
+    pattern[i].note[0] = 36;
+    pattern[i].note[1] = 38;
+    pattern[i].note[2] = 43;
+    pattern[i].note[3] = 50;
+    pattern[i].note[4] = 42;
+    pattern[i].note[5] = 46;
+    pattern[i].note[6] = 39;
+
   }
 
   activePattern = 0;
