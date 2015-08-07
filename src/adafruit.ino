@@ -176,7 +176,7 @@ class AdaControl : public Control {
     for (i=7; i>=0; i--)
       {
 	digitalWrite(10, 0);
-	delayMicroseconds(0.2);
+	delayMicroseconds(2);
 	temp = digitalRead(12);
 	if (temp)
 	  myDataIn = myDataIn | (1 << i);
