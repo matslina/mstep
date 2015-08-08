@@ -1,6 +1,5 @@
 #include <stdlib.h>
 
-#include <stdio.h>
 #include "mstep.hpp"
 
 #ifndef F
@@ -87,11 +86,43 @@ MStep::MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
   activeRow = -1;
 }
 
+static int appends(char *buf, char *s) {
+  int i = 0;
+
+  while (*s) {
+    buf[i++] = *s;
+    s++;
+  }
+  buf[i] = '\0';
+
+  return i;
+}
+
+static int appendi(char *buf, int v) {
+  int i = 0;
+  int n = v;
+
+  if (v > 99) {
+    buf[i++] = n / 100 + '0';
+    n %= 100;
+  }
+  if (v > 9) {
+    buf[i++] = n / 10 + '0';
+    n %= 10;
+  }
+  buf[i++] = n + '0';
+  buf[i] = '\0';
+
+  return i;
+}
+
 static void displayInteger(Display *display, char *name, int value) {
-  char buf[20];
-  sprintf(buf, "  %d", value);
+  char buf[16];
+  int i = 0;
   display->clear();
   display->write(0, name);
+  i += appends(buf, "  ");
+  appendi(buf + i, value);
   display->write(1, buf);
 }
 
@@ -113,10 +144,11 @@ void MStep::noteStop() {
 void MStep::noteTick() {
   bool rowChanged = false;
   bool noteChanged = false;
-  char buf[20];
+  char buf[16];
   char row, column;
   int mod;
   int value;
+  int i;
   const char *notes[] = {"C", "C#", "D", "D#", "E", "F",
 			 "F#", "G", "G#", "A", "A#", "B"};
 
@@ -144,10 +176,16 @@ void MStep::noteTick() {
   }
 
   if (rowChanged || noteChanged) {
-    sprintf(buf, F("  %d: %s%d (%d)"),
-	    this->activeRow, notes[value % 12], value / 12 - 1, value);
     display->clear();
     display->write(0, F("NOTE"));
+    i = appends(buf, F("  "));
+    i += appendi(buf + i, this->activeRow);
+    i += appends(buf + i, F(": "));
+    i += appends(buf + i, (char *)notes[value % 12]);
+    i += appendi(buf + i, value / 12 - 1);
+    i += appends(buf + i, F(" ("));
+    i += appendi(buf + i, value);
+    appends(buf + i, F(")"));
     display->write(1, buf);
   }
 
