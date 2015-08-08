@@ -188,7 +188,7 @@ class AdaControl : public Control {
   void indicate(int event) {
     // clock, latch, data = 7, 8, 9
     digitalWrite(8, LOW);
-    shiftOut(9, 7, MSBFIRST, 0xf0);
+    shiftOut(9, 7, MSBFIRST, event);
     digitalWrite(8, HIGH);
   }
 
