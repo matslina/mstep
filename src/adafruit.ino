@@ -195,18 +195,12 @@ class AdaControl : public Control {
     byte b = this->shiftIn();
     byte ret = 0;
 
-    if (b & 1)
-      ret |= Control::PLAY;
-    if (b & 2)
-      ret |= Control::NOTE;
-    if (b & 4)
-      ret |= Control::TEMPO;
     if (b & 64)
       up++;
     if (b & 32)
       down++;
 
-    return ret;
+    return b & ~(Control::QUIT);
   }
 
   int getUp() {
