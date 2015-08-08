@@ -21,14 +21,11 @@ class Control {
  public:
   enum {
     PLAY = 1,
-    QUIT = 2,
-    NOTE = 4,
-    UP = 8,
-    DOWN = 16,
-    SELECT = 32,
-    TEMPO = 64,
-    PATTERN = 128,
-    CHANNEL = 256,
+    NOTE = 2,
+    TEMPO = 4,
+    PATTERN = 8,
+    CHANNEL = 16,
+    QUIT = 32,
   };
   virtual void indicate(int event) = 0;
   virtual int getEvent() = 0;
