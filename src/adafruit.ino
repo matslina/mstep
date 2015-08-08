@@ -105,25 +105,24 @@ class AdaGrid : public Grid {
     return false;
   }
 
+  static void drawRange(Adafruit_TrellisSet *trellis,
+			char *state, int lo, int hi) {
+    int pad;
+    for (int i=lo; i < hi; i++) {
+      pad = i - lo;
+      if (state[i >> 3] & (1 << (i & 0x7)))
+	trellis->setLED(LEDAT(pad >> 4, pad & 0xf));
+      else
+	trellis->clrLED(LEDAT(pad >> 4, pad & 0xf));
+    }
+    trellis->writeDisplay();
+  }
+
   void draw(char *state) {
     switchI2C(false);
-    for (int i=0; i < 64; i++) {
-      if (state[i >> 3] & (1 << (i & 0x7)))
-	trellis0.setLED(LEDAT(i >> 4, i & 0xf));
-      else
-	trellis0.clrLED(LEDAT(i >> 4, i & 0xf));
-    }
-    trellis0.writeDisplay();
-
+    drawRange(&trellis0, state, 0, 64);
     switchI2C(true);
-    for (int i = 16 * 4; i < 16 * 12; i++) {
-      int pad = i - 64;
-      if (state[i / 8] & (1 << (i % 8)))
-	trellis1.setLED(LEDAT(pad >> 4, pad & 0xf));
-      else
-	trellis1.clrLED(LEDAT(pad >> 4, pad & 0xf));
-    }
-    trellis1.writeDisplay();
+    drawRange(&trellis1, state, 64, 192);
   }
 
   char getWidth() {
