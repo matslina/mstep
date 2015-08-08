@@ -341,7 +341,17 @@ void MStep::run() {
   display->write(1, F("  ready"));
 
   while (1) {
-    sleepDuration = 30;
+
+    // playback is prio 1. don't bother processing events unless we
+    // have "enough" time.
+    if (mode & Control::PLAY) {
+      sleepDuration = playTick();
+      if (sleepDuration < 30) {
+	sleep(sleepDuration);
+	continue;
+      }
+      sleep(15);
+    }
 
     event = control->getEvent();
 
@@ -418,10 +428,6 @@ void MStep::run() {
       channelTick();
       break;
     }
-    if (mode & Control::PLAY)
-      sleepDuration = MIN(sleepDuration, playTick());
-
-    sleep(sleepDuration);
   }
 }
 
