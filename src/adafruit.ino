@@ -148,11 +148,14 @@ class AdaMIDI : public MIDI {
 
 };
 
+int control_mod = 0;
+
+static void rotaryDecode() {
+  control_mod += digitalRead(6) == digitalRead(7) ? 1 : -1;
+}
+
 class AdaControl : public Control {
  public:
-  int up = 0;
-  int down = 0;
-
   void initialize() {
       pinMode(12, INPUT);
       pinMode(11, OUTPUT);
@@ -160,6 +163,9 @@ class AdaControl : public Control {
       pinMode(9, OUTPUT);
       pinMode(8, OUTPUT);
       pinMode(7, OUTPUT);
+      pinMode(6, INPUT_PULLUP);
+      pinMode(7, INPUT_PULLUP);
+      attachInterrupt(4, rotaryDecode, FALLING);
   }
 
   // shifts in from 4021 w (clock, latch, data) = (10, 11, 12)
@@ -195,24 +201,25 @@ class AdaControl : public Control {
     byte b = this->shiftIn();
     byte ret = 0;
 
-    if (b & 64)
-      up++;
-    if (b & 32)
-      down++;
-
     return b & ~(Control::QUIT);
   }
 
   int getUp() {
-    int up = this->up;
-    this->up = 0;
-    return up;
+    int up = control_mod;
+    if (up > 0) {
+      control_mod = 0;
+      return up;
+    }
+    return 0;
   }
 
   int getDown() {
-    int down = this->down;
-    this->down = 0;
-    return down;
+    int down = control_mod;
+    if (down < 0) {
+      control_mod = 0;
+      return -down;
+    }
+    return 0;
   }
 
 
