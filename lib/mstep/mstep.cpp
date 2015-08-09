@@ -350,8 +350,8 @@ void MStep::run() {
 	sleep(sleepDuration);
 	continue;
       }
-      sleep(15);
     }
+    sleep(15);
 
     event = control->getEvent();
 
