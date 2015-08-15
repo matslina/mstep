@@ -39,18 +39,18 @@ MStep::MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
   // this is a bit unwieldy, but helps track memory consumption
   buf = (char *)malloc(gridStateSize + // gridOverlay
 		       gridStateSize + // gridBuf
-		       gridHeight * sizeof(pattern_t) + // patterns
-		       gridHeight * (gridStateSize + // pattern grids
-				     gridHeight + // pattern notes
-				     gridHeight + // pattern velocities
-				     gridHeight)); // pattern active notes
+		       (gridHeight + 1) * sizeof(pattern_t) + // patterns
+		       (gridHeight + 1) * (gridStateSize + // pattern grids
+					   gridHeight + // pattern notes
+					   gridHeight + // pattern velocities
+					   gridHeight)); // pattern active notes
 
   // assign pointers
   gridOverlay = buf;
   gridBuf     = buf + gridStateSize;
   pattern = (pattern_t *)(buf + gridStateSize * 2);
-  char *tmpp = buf + gridStateSize * 2 + gridHeight * sizeof(pattern_t);
-  for (int i = 0; i < gridHeight; i++) {
+  char *tmpp = buf + gridStateSize * 2 + (gridHeight + 1) * sizeof(pattern_t);
+  for (int i = 0; i < gridHeight + 1; i++) {
     pattern[i].grid = tmpp;
     pattern[i].note = tmpp + gridStateSize;
     pattern[i].velocity = tmpp + gridStateSize + gridHeight;
@@ -62,7 +62,7 @@ MStep::MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
   // initialize. this should load from eeprom or use a default.
   for (int i = 0; i < gridStateSize; i++) gridOverlay[i] = 0;
   for (int i = 0; i < gridStateSize; i++) gridBuf[i] = 0;
-  for (int i = 0; i < gridHeight; i++) {
+  for (int i = 0; i < gridHeight + 1; i++) {
     for (int j = 0; j < gridStateSize; j++) pattern[i].grid[j] = 0;
     for (int j = 0; j < gridHeight; j++) pattern[i].note[j] = 36 + j;
     for (int j = 0; j < gridHeight; j++) pattern[i].velocity[j] = 127;
@@ -78,8 +78,8 @@ MStep::MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
     pattern[i].note[4] = 42;
     pattern[i].note[5] = 46;
     pattern[i].note[6] = 39;
-
   }
+  clipboard = &pattern[gridHeight];
 
   activePattern = 0;
   tempo = DEFAULT_TEMPO;
@@ -402,6 +402,20 @@ void MStep::run() {
 
       mode = (mode & Control::PLAY) | (event & ~mode);
       control->indicate(mode);
+    }
+
+    if (event & Control::COPY) {
+      for (int i = 0; i < gridStateSize; i++) {
+	clipboard->grid[i] = pattern[activePattern].grid[i];
+      }
+    } else if (event & Control::PASTE) {
+      for (int i = 0; i < gridStateSize; i++)
+	pattern[activePattern].grid[i] |= clipboard->grid[i];
+      draw();
+    } else if (event & Control::CLEAR) {
+      for (int i = 0; i < gridStateSize; i++)
+	pattern[activePattern].grid[i] = 0;
+      draw();
     }
 
     // unless in note mode, grid press updates grid state

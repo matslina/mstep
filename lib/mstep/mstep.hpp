@@ -24,8 +24,11 @@ class Control {
     NOTE = 2,
     TEMPO = 4,
     PATTERN = 8,
-    CHANNEL = 16,
-    QUIT = 32,
+    COPY = 16,
+    PASTE = 32,
+    CLEAR = 64,
+    CHANNEL = 1024,
+    QUIT = 2048,
   };
   virtual void indicate(int event) = 0;
   virtual int getEvent() = 0;
@@ -55,6 +58,7 @@ private:
   MIDI *midi;
   char *buf;
   pattern_t *pattern;
+  pattern_t *clipboard;
   int activePattern;
   char *gridOverlay;
   char *gridBuf;

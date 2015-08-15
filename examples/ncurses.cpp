@@ -241,8 +241,8 @@ public:
 };
 
 static const char *COMMAND[] = {"Play", "Note", "Tempo", "pAttern",
-				"Channel", "Quit"};
-static const char COMMANDCHAR[] = {'P', 'N', 'T', 'A', 'C', 'Q'};
+				"cOpy", "paSte", "cleaR", "Channel", "Quit"};
+static const char COMMANDCHAR[] = {'P', 'N', 'T', 'A', 'O', 'S', 'R', 'C'};
 
 class CursesControl : public Control {
 public:
@@ -307,12 +307,15 @@ public:
     for (int i = 0; i < sizeof(COMMANDCHAR); i++)
       if (tolower(COMMANDCHAR[i]) == c)
 	event |= 1 << i;
-    switch (c) {
+    switch (tolower(c)) {
     case 'u':
       up++;
       break;
     case 'd':
       down++;
+      break;
+    case 'q':
+      event |= Control::QUIT;
       break;
     }
   }
