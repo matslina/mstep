@@ -241,8 +241,10 @@ public:
 };
 
 static const char *COMMAND[] = {"Play", "Note", "Tempo", "pAttern",
-				"cOpy", "paSte", "cleaR", "Channel", "Quit"};
-static const char COMMANDCHAR[] = {'P', 'N', 'T', 'A', 'O', 'S', 'R', 'C'};
+				"cOpy", "paSte", "cleaR", "sWing ","Channel",
+				"Quit"};
+static const char COMMANDCHAR[] = {'P', 'N', 'T', 'A', 'O',
+				   'S', 'R', 'W', 'C'};
 
 class CursesControl : public Control {
 public:

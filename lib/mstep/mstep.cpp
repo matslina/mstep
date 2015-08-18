@@ -18,6 +18,8 @@ struct pattern_t {
   char channel;
   char activeChannel;
   char column;
+  char swing;
+  int swingDelay;
 };
 
 
@@ -68,6 +70,7 @@ MStep::MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
     for (int j = 0; j < gridHeight; j++) pattern[i].velocity[j] = 127;
     for (int j = 0; j < gridHeight; j++) pattern[i].active[j] = -1;
     pattern[i].column = -1;
+    pattern[i].swing = 50;
 
     // hard coded volca notes as defaults
     // hack hack hack hack hack
@@ -241,6 +244,24 @@ void MStep::channelTick() {
   pattern[activePattern].channel = channel;
 }
 
+void MStep::swingStart() {
+  displayInteger(display, F("SWING"), pattern[activePattern].swing);
+}
+
+void MStep::swingTick() {
+  int mod;
+  int swing;
+
+  mod = control->getUp() - control->getDown();
+  if (!mod)
+    return;
+
+  swing = pattern[activePattern].swing;
+  swing = MIN(75, MAX(50, swing + mod));
+  displayInteger(display, F("SWING"), swing);
+  pattern[activePattern].swing = swing;
+}
+
 void MStep::playStart() {
   playPattern = activePattern;
 
@@ -276,13 +297,16 @@ int MStep::playTick() {
   int pad;
   pattern_t *p;
   unsigned long int now;
+  unsigned long int when;
+
+  p = &pattern[playPattern];
 
   now = time();
-  if (playNext > now)
-    return playNext - now;
+  when = playNext + p->swingDelay;
+  if (when > now)
+    return when - now;
 
   // note off for currently playing notes
-  p = &pattern[playPattern];
   for (int i = 0; i < gridHeight; i ++) {
     if (p->active[i] >= 0) {
       midi->noteOn(p->activeChannel, p->active[i], 0);
@@ -318,8 +342,11 @@ int MStep::playTick() {
 
   // schedule next step
   playNext += (240000 / tempo) / gridWidth;
+  p->swingDelay = 0;
+  if (!(p->column & 1))
+    p->swingDelay = ((float)(p->swing - 50) / 50) * (240000 / tempo) / gridWidth;
 
-  return MAX(0, playNext - time());
+  return MAX(0, playNext + p->swingDelay - time());
 }
 
 
@@ -370,7 +397,8 @@ void MStep::run() {
     // only process event if it's unambiguous and it isn't garbage
     if (event && !(event & (event - 1)) &&
 	event & (Control::NOTE | Control::TEMPO |
-		 Control::PATTERN | Control::CHANNEL)) {
+		 Control::PATTERN | Control::CHANNEL |
+		 Control::SWING)) {
 
       // with the exception of PLAY, all modes are mutually exclusive,
       // so we stop the current mode
@@ -394,6 +422,9 @@ void MStep::run() {
 	break;
       case Control::CHANNEL:
 	channelStart();
+	break;
+      case Control::SWING:
+	swingStart();
 	break;
       default:
 	display->clear();
@@ -440,6 +471,9 @@ void MStep::run() {
       break;
     case Control::CHANNEL:
       channelTick();
+      break;
+    case Control::SWING:
+      swingTick();
       break;
     }
   }

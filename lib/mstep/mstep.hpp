@@ -27,6 +27,7 @@ class Control {
     COPY = 16,
     PASTE = 32,
     CLEAR = 64,
+    SWING = 128,
     CHANNEL = 1024,
     QUIT = 2048,
   };
@@ -87,6 +88,8 @@ private:
   void noteTick();
   void channelStart();
   void channelTick();
+  void swingStart();
+  void swingTick();
 };
 
 #endif
