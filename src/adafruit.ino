@@ -204,24 +204,11 @@ class AdaControl : public Control {
     return b & ~(Control::QUIT);
   }
 
-  int getUp() {
-    int up = control_mod;
-    if (up > 0) {
-      control_mod = 0;
-      return up;
-    }
-    return 0;
+  int getMod() {
+    int mod = control_mod;
+    control_mod = 0;
+    return mod;
   }
-
-  int getDown() {
-    int down = control_mod;
-    if (down < 0) {
-      control_mod = 0;
-      return -down;
-    }
-    return 0;
-  }
-
 
   // keeping this old debouncing logic around for now
   bool click(int pin, unsigned long *lastLow) {

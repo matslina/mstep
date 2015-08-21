@@ -172,7 +172,7 @@ void MStep::noteTick() {
 
   value = pattern[activePattern].note[this->activeRow];
 
-  mod = control->getUp() - control->getDown();
+  mod = control->getMod();
   if (mod) {
     value = MIN(127, MAX(0, value + mod));
     noteChanged = true;
@@ -202,7 +202,7 @@ void MStep::tempoStart() {
 void MStep::tempoTick() {
   int mod;
 
-  mod = control->getUp() - control->getDown();
+  mod = control->getMod();
   if (!mod)
     return;
 
@@ -217,7 +217,7 @@ void MStep::patternStart() {
 void MStep::patternTick() {
   int mod;
 
-  mod = control->getUp() - control->getDown();
+  mod = control->getMod();
   if (!mod)
     return;
 
@@ -234,7 +234,7 @@ void MStep::channelTick() {
   int mod;
   int channel;
 
-  mod = control->getUp() - control->getDown();
+  mod = control->getMod();
   if (!mod)
     return;
 
@@ -252,7 +252,7 @@ void MStep::swingTick() {
   int mod;
   int swing;
 
-  mod = control->getUp() - control->getDown();
+  mod = control->getMod();
   if (!mod)
     return;
 

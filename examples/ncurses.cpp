@@ -253,8 +253,7 @@ public:
   int y;
   int rows;
   int event;
-  int up;
-  int down;
+  int mod;
 
   CursesControl(pthread_mutex_t *mutex_curses, int x, int y, int rows) {
     this->mutex_curses = mutex_curses;
@@ -262,8 +261,7 @@ public:
     this->y = y;
     this->rows = rows;
     event = 0;
-    up = 0;
-    down = 0;
+    mod = 0;
     indicate(0);
   }
 
@@ -273,15 +271,9 @@ public:
     return ret;
   }
 
-  int getUp() {
-    int ret = up;
-    up = 0;
-    return ret;
-  }
-
-  int getDown() {
-    int ret = down;
-    down = 0;
+  int getMod() {
+    int ret = mod;
+    mod = 0;
     return ret;
   }
 
@@ -311,10 +303,10 @@ public:
 	event |= 1 << i;
     switch (tolower(c)) {
     case 'u':
-      up++;
+      mod++;
       break;
     case 'd':
-      down++;
+      mod--;
       break;
     case 'q':
       event |= Control::QUIT;

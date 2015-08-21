@@ -33,8 +33,7 @@ class Control {
   };
   virtual void indicate(int event) = 0;
   virtual int getEvent() = 0;
-  virtual int getUp() = 0;
-  virtual int getDown() = 0;
+  virtual int getMod() = 0;
 };
 
 class Display {
