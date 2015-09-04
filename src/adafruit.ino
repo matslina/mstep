@@ -156,6 +156,8 @@ static void rotaryDecode() {
 
 class AdaControl : public Control {
  public:
+  bool select;
+
   void initialize() {
       pinMode(12, INPUT);
       pinMode(11, OUTPUT);
@@ -166,6 +168,7 @@ class AdaControl : public Control {
       pinMode(6, INPUT_PULLUP);
       pinMode(7, INPUT_PULLUP);
       attachInterrupt(4, rotaryDecode, FALLING);
+      select = false;
   }
 
   // shifts in from 4021 w (clock, latch, data) = (10, 11, 12)
@@ -208,6 +211,12 @@ class AdaControl : public Control {
     int mod = control_mod;
     control_mod = 0;
     return mod;
+  }
+
+  bool getSelect() {
+    int select = this->select;
+    this->select = false;
+    return select;
   }
 
   // keeping this old debouncing logic around for now
