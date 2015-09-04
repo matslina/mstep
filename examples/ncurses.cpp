@@ -254,6 +254,7 @@ public:
   int rows;
   int event;
   int mod;
+  bool select;
 
   CursesControl(pthread_mutex_t *mutex_curses, int x, int y, int rows) {
     this->mutex_curses = mutex_curses;
@@ -262,6 +263,7 @@ public:
     this->rows = rows;
     event = 0;
     mod = 0;
+    select = false;
     indicate(0);
   }
 
@@ -274,6 +276,12 @@ public:
   int getMod() {
     int ret = mod;
     mod = 0;
+    return ret;
+  }
+
+  bool getSelect() {
+    bool ret = select;
+    select = false;
     return ret;
   }
 
@@ -311,6 +319,10 @@ public:
     case 'q':
       event |= Control::QUIT;
       break;
+    case '\n':
+      select = true;
+      break;
+
     }
   }
 

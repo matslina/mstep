@@ -197,6 +197,7 @@ void MStep::noteTick() {
 
 void MStep::tempoStart() {
   displayInteger(display, F("TEMPO"), tempo);
+  patternState = 0;
 }
 
 void MStep::tempoTick() {
@@ -211,18 +212,34 @@ void MStep::tempoTick() {
 }
 
 void MStep::patternStart() {
-  displayInteger(display, F("PATTERN"), activePattern);
+  patternState = 0;
+  displayInteger(display, F("PATTERN       >"), activePattern);
 }
 
 void MStep::patternTick() {
   int mod;
+  bool displayAnyway = false;
+
+  if (control->getSelect()) {
+    if (++patternState > 1)
+      patternState = 0;
+    displayAnyway = true;
+  }
 
   mod = control->getMod();
-  if (!mod)
+  if (!mod && !displayAnyway)
     return;
 
-  activePattern = MIN(gridHeight - 1, MAX(0, activePattern + mod));
-  displayInteger(display, F("PATTERN"), activePattern);
+  switch (patternState) {
+  case 0:
+    activePattern = MIN(gridHeight - 1, MAX(0, activePattern + mod));
+    displayInteger(display, F("PATTERN"), activePattern);
+    break;
+  case 1:
+    pattern[activePattern].swing = MIN(75, MAX(50, pattern[activePattern].swing + mod));
+    displayInteger(display, F("SWING"), pattern[activePattern].swing);
+    break;
+  }
   draw();
 }
 
@@ -242,24 +259,6 @@ void MStep::channelTick() {
   channel = MIN(15, MAX(0, channel + mod));
   displayInteger(display, F("PATTERN"), channel);
   pattern[activePattern].channel = channel;
-}
-
-void MStep::swingStart() {
-  displayInteger(display, F("SWING"), pattern[activePattern].swing);
-}
-
-void MStep::swingTick() {
-  int mod;
-  int swing;
-
-  mod = control->getMod();
-  if (!mod)
-    return;
-
-  swing = pattern[activePattern].swing;
-  swing = MIN(75, MAX(50, swing + mod));
-  displayInteger(display, F("SWING"), swing);
-  pattern[activePattern].swing = swing;
 }
 
 void MStep::playStart() {
@@ -397,8 +396,7 @@ void MStep::run() {
     // only process event if it's unambiguous and it isn't garbage
     if (event && !(event & (event - 1)) &&
 	event & (Control::NOTE | Control::TEMPO |
-		 Control::PATTERN | Control::CHANNEL |
-		 Control::SWING)) {
+		 Control::PATTERN | Control::CHANNEL)) {
 
       // with the exception of PLAY, all modes are mutually exclusive,
       // so we stop the current mode
@@ -422,9 +420,6 @@ void MStep::run() {
 	break;
       case Control::CHANNEL:
 	channelStart();
-	break;
-      case Control::SWING:
-	swingStart();
 	break;
       default:
 	display->clear();
@@ -471,9 +466,6 @@ void MStep::run() {
       break;
     case Control::CHANNEL:
       channelTick();
-      break;
-    case Control::SWING:
-      swingTick();
       break;
     }
   }

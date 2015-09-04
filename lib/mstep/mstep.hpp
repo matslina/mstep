@@ -34,6 +34,7 @@ class Control {
   virtual void indicate(int event) = 0;
   virtual int getEvent() = 0;
   virtual int getMod() = 0;
+  virtual bool getSelect() = 0;
 };
 
 class Display {
@@ -80,6 +81,7 @@ private:
   int playTick();
   void tempoStart();
   void tempoTick();
+  int patternState;
   void patternStart();
   void patternTick();
   void noteStart();
@@ -87,8 +89,6 @@ private:
   void noteTick();
   void channelStart();
   void channelTick();
-  void swingStart();
-  void swingTick();
 };
 
 #endif
