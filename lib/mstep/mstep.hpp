@@ -81,14 +81,11 @@ private:
   int playTick();
   void tempoStart();
   void tempoTick();
-  int patternState;
   void patternStart();
   void patternTick();
   void noteStart();
   void noteStop();
   void noteTick();
-  void channelStart();
-  void channelTick();
 };
 
 #endif

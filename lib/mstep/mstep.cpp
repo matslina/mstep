@@ -22,6 +22,14 @@ struct pattern_t {
   int swingDelay;
 };
 
+class Mode {
+public:
+  virtual void start() = 0;
+  virtual void stop() = 0;
+  virtual unsigned int tick() = 0;
+private:
+};
+
 
 MStep::MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
 	     void (*sleep)(unsigned long),
@@ -129,6 +137,69 @@ static void displayInteger(Display *display, char *name, int value) {
   display->write(1, buf);
 }
 
+
+class PatternMode : Mode {
+public:
+  int field;
+  Display *display;
+  Control *control;
+  pattern_t *pattern;
+  int npattern;
+  int *active;
+
+  PatternMode(Display *display, Control *control, pattern_t *pattern,
+	      int npattern, int *active) {
+    this->display = display;
+    this->control = control;
+    this->pattern = pattern;
+    this->npattern = npattern;
+    this->active = active;
+  }
+
+  void start() {
+    field = 0;
+    displayInteger(display, "PATTERN       >", *active);
+  }
+
+  void stop() {
+  }
+
+  unsigned int tick() {
+    int mod;
+    bool displayAnyway = false;
+
+    if (control->getSelect()) {
+      if (++field > 2)
+	field = 0;
+      displayAnyway = true;
+    }
+
+    mod = control->getMod();
+    if (!mod && !displayAnyway)
+      return 100;
+
+    switch (field) {
+    case 0:
+      *active = MIN(npattern - 1, MAX(0, *active + mod));
+      displayInteger(display, F("PATTERN"), *active);
+      break;
+    case 1:
+      pattern[*active].swing = MIN(75, MAX(50, pattern[*active].swing + mod));
+      displayInteger(display, F("SWING"), pattern[*active].swing);
+      break;
+    case 2:
+      pattern[*active].channel = MIN(16, MAX(1, pattern[*active].channel + mod));
+      displayInteger(display, F("CHANNEL"), pattern[*active].channel);
+      break;
+    }
+
+    return 100;
+  }
+
+};
+
+
+
 void MStep::noteStart() {
   activeRow = -1;
   display->clear();
@@ -197,7 +268,6 @@ void MStep::noteTick() {
 
 void MStep::tempoStart() {
   displayInteger(display, F("TEMPO"), tempo);
-  patternState = 0;
 }
 
 void MStep::tempoTick() {
@@ -209,56 +279,6 @@ void MStep::tempoTick() {
 
   tempo = MIN(240, MAX(1, tempo + mod));
   displayInteger(display, F("TEMPO"), tempo);
-}
-
-void MStep::patternStart() {
-  patternState = 0;
-  displayInteger(display, F("PATTERN       >"), activePattern);
-}
-
-void MStep::patternTick() {
-  int mod;
-  bool displayAnyway = false;
-
-  if (control->getSelect()) {
-    if (++patternState > 1)
-      patternState = 0;
-    displayAnyway = true;
-  }
-
-  mod = control->getMod();
-  if (!mod && !displayAnyway)
-    return;
-
-  switch (patternState) {
-  case 0:
-    activePattern = MIN(gridHeight - 1, MAX(0, activePattern + mod));
-    displayInteger(display, F("PATTERN"), activePattern);
-    break;
-  case 1:
-    pattern[activePattern].swing = MIN(75, MAX(50, pattern[activePattern].swing + mod));
-    displayInteger(display, F("SWING"), pattern[activePattern].swing);
-    break;
-  }
-  draw();
-}
-
-void MStep::channelStart() {
-  displayInteger(display, F("CHANNEL"), pattern[activePattern].channel);
-}
-
-void MStep::channelTick() {
-  int mod;
-  int channel;
-
-  mod = control->getMod();
-  if (!mod)
-    return;
-
-  channel = pattern[activePattern].channel;
-  channel = MIN(15, MAX(0, channel + mod));
-  displayInteger(display, F("PATTERN"), channel);
-  pattern[activePattern].channel = channel;
 }
 
 void MStep::playStart() {
@@ -356,6 +376,9 @@ void MStep::run() {
   int mode;
   int sleepDuration;
 
+  PatternMode pmode = PatternMode(display, control, pattern,
+				  gridHeight, &activePattern);
+
   display->write(0, F("initializing"));
   displayStartupSequence();
   mode = 0;
@@ -396,7 +419,7 @@ void MStep::run() {
     // only process event if it's unambiguous and it isn't garbage
     if (event && !(event & (event - 1)) &&
 	event & (Control::NOTE | Control::TEMPO |
-		 Control::PATTERN | Control::CHANNEL)) {
+		 Control::PATTERN)) {
 
       // with the exception of PLAY, all modes are mutually exclusive,
       // so we stop the current mode
@@ -416,10 +439,7 @@ void MStep::run() {
 	tempoStart();
 	break;
       case Control::PATTERN:
-	patternStart();
-	break;
-      case Control::CHANNEL:
-	channelStart();
+	pmode.start();
 	break;
       default:
 	display->clear();
@@ -462,10 +482,7 @@ void MStep::run() {
       tempoTick();
       break;
     case Control::PATTERN:
-      patternTick();
-      break;
-    case Control::CHANNEL:
-      channelTick();
+      pmode.tick();
       break;
     }
   }
