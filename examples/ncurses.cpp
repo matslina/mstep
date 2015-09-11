@@ -241,10 +241,10 @@ public:
 };
 
 static const char *COMMAND[] = {"Play", "Note", "Tempo", "pAttern",
-				"cOpy", "paSte", "cleaR", "sWing ","Channel",
+				"cOpy", "paSte", "cleaR",
 				"Quit"};
 static const char COMMANDCHAR[] = {'P', 'N', 'T', 'A', 'O',
-				   'S', 'R', 'W', 'C'};
+				   'S', 'R'};
 
 class CursesControl : public Control {
 public:
