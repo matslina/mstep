@@ -266,20 +266,36 @@ void MStep::noteTick() {
   pattern[activePattern].note[this->activeRow] = value;
 }
 
-void MStep::tempoStart() {
-  displayInteger(display, F("TEMPO"), tempo);
-}
+class TempoMode : Mode {
+public:
+  Display *display;
+  Control *control;
+  int *tempo;
 
-void MStep::tempoTick() {
-  int mod;
+  TempoMode(Display *display, Control *control, int *tempo) {
+    this->display = display;
+    this->control = control;
+    this->tempo = tempo;
+  }
 
-  mod = control->getMod();
-  if (!mod)
-    return;
+  void start() {
+    displayInteger(display, F("TEMPO"), *tempo);
+  }
 
-  tempo = MIN(240, MAX(1, tempo + mod));
-  displayInteger(display, F("TEMPO"), tempo);
-}
+  void stop() {
+  }
+
+  unsigned int tick() {
+    int mod;
+
+    mod = control->getMod();
+    if (!mod)
+      return 123123;
+
+    *tempo = MIN(240, MAX(1, *tempo + mod));
+    displayInteger(display, F("TEMPO"), *tempo);
+  }
+};
 
 void MStep::playStart() {
   playPattern = activePattern;
@@ -378,6 +394,7 @@ void MStep::run() {
 
   PatternMode pmode = PatternMode(display, control, pattern,
 				  gridHeight, &activePattern);
+  TempoMode tmode = TempoMode(display, control, &tempo);
 
   display->write(0, F("initializing"));
   displayStartupSequence();
@@ -436,7 +453,7 @@ void MStep::run() {
 	noteStart();
 	break;
       case Control::TEMPO:
-	tempoStart();
+	tmode.start();
 	break;
       case Control::PATTERN:
 	pmode.start();
@@ -479,7 +496,7 @@ void MStep::run() {
       noteTick();
       break;
     case Control::TEMPO:
-      tempoTick();
+      tmode.tick();
       break;
     case Control::PATTERN:
       pmode.tick();
