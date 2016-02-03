@@ -1,6 +1,7 @@
 #include <stdlib.h>
 
 #include "mstep.hpp"
+#include "stuff.hpp"
 
 #define GRID_W MSTEP_GRID_WIDTH
 #define GRID_H MSTEP_GRID_HEIGHT
@@ -24,6 +25,23 @@ private:
 MStep::MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
 	     void (*sleep)(unsigned long),
 	     unsigned long (*time)(void)) {
+  this->grid = grid;
+  this->control = control;
+  this->display = display;
+  this->midi = midi;
+  this->sleep = sleep;
+  this->time = time;
+}
+
+void MStep::run() {
+  Sequencer s = Sequencer(grid, control, display, midi, sleep, time);
+  s.run();
+}
+
+
+Sequencer::Sequencer(Grid *grid, Control *control, Display *display, MIDI *midi,
+		     void (*sleep)(unsigned long),
+		     unsigned long (*time)(void)) {
   this->grid = grid;
   this->control = control;
   this->display = display;
@@ -145,6 +163,7 @@ public:
     case 0:
       *active = MIN(npattern - 1, MAX(0, *active + mod));
       displayInteger(display, F("PATTERN"), *active);
+      // FIXME: grid has to be redrawn here
       break;
     case 1:
       pattern[*active].swing = MIN(75, MAX(50, pattern[*active].swing + mod));
@@ -163,14 +182,14 @@ public:
 
 
 
-void MStep::noteStart() {
+void Sequencer::noteStart() {
   activeRow = -1;
   display->clear();
   display->write(0, F("NOTE"));
   display->write(1, F("  <select row>"));
 }
 
-void MStep::noteStop() {
+void Sequencer::noteStop() {
   if (activeRow > -1) {
     overlayHline(activeRow);
     draw();
@@ -178,7 +197,7 @@ void MStep::noteStop() {
   activeRow = -1;
 }
 
-void MStep::noteTick() {
+void Sequencer::noteTick() {
   bool rowChanged = false;
   bool noteChanged = false;
   char buf[16];
@@ -260,11 +279,12 @@ public:
   }
 };
 
-void MStep::playStart() {
+void Sequencer::playStart() {
   playPattern = activePattern;
 
   // schedule next step to happen immediately
   playNext = time();
+  pattern[playPattern].swingDelay = 0;
 
   // pretend we just played the final column so that the next
   // playTick() progresses to the first column to start playback. note
@@ -275,7 +295,7 @@ void MStep::playStart() {
   overlayVline(pattern[playPattern].column);
 }
 
-void MStep::playStop() {
+void Sequencer::playStop() {
   // send note off for notes currently on
   for (int i = 0; i < GRID_H; i ++) {
     if (pattern[playPattern].active[i] >= 0) {
@@ -291,7 +311,7 @@ void MStep::playStop() {
   draw();
 }
 
-int MStep::playTick() {
+int Sequencer::playTick() {
   int pad;
   pattern_t *p;
   unsigned long int now;
@@ -348,7 +368,7 @@ int MStep::playTick() {
 }
 
 
-void MStep::run() {
+void Sequencer::run() {
   char row, column;
   int pad;
   int event;
@@ -468,7 +488,7 @@ void MStep::run() {
   }
 }
 
-void MStep::draw() {
+void Sequencer::draw() {
   if (activePattern == playPattern) {
     for (int i = 0; i < GRID_BYTES; i++)
       gridBuf[i] = pattern[playPattern].grid[i] ^ gridOverlay[i];
@@ -478,17 +498,17 @@ void MStep::draw() {
     grid->draw(pattern[activePattern].grid);
 }
 
-void MStep::overlayVline(char column) {
+void Sequencer::overlayVline(char column) {
   for (int i = column; i < GRID_W * GRID_H; i += GRID_W)
     gridOverlay[i >> 3] ^= 1 << (i & 7);
 }
 
-void MStep::overlayHline(char row) {
+void Sequencer::overlayHline(char row) {
   for (int i = row * GRID_W; i < (row + 1) * GRID_W; i++)
     gridOverlay[i >> 3] ^= 1 << (i & 7);
 }
 
-void MStep::displayStartupSequence() {
+void Sequencer::displayStartupSequence() {
   for (int i=0; i < GRID_W * 2; i++) {
     overlayVline(i % GRID_W);
     draw();
