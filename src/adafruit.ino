@@ -1,5 +1,9 @@
 #include <LiquidCrystal.h>
 #include <Adafruit_Trellis.h>
+
+#define MSTEP_GRID_WIDTH 16
+#define MSTEP_GRID_HEIGHT 16
+
 #include <mstep.hpp>
 
 #define PIN_PLAYPAUSE 4
@@ -125,13 +129,6 @@ class AdaGrid : public Grid {
     drawRange(&trellis1, state, 64, 192);
   }
 
-  char getWidth() {
-    return 16;
-  }
-
-  char getHeight() {
-    return 12;
-  }
 };
 
 class AdaMIDI : public MIDI {

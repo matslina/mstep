@@ -10,10 +10,6 @@
 #include <algorithm>
 #include <mstep.hpp>
 
-
-#define DEFAULT_WIDTH 16
-#define DEFAULT_HEIGHT 8
-
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
@@ -73,14 +69,6 @@ public:
     }
     pthread_mutex_unlock(mutex_curses);
     placeCursor(cursorRow, cursorColumn);
-  }
-
-  char getWidth() {
-    return columns;
-  }
-
-  char getHeight() {
-    return rows;
   }
 
   //
@@ -437,24 +425,9 @@ int uiloop(int grid_rows, int grid_columns) {
 }
 
 int main(int argc, char *argv[]) {
-  int width = DEFAULT_WIDTH;
-  int height = DEFAULT_HEIGHT;
   pthread_t sequencer;
 
-  /* grid dimension optionally from args */
-  if (argc > 1) {
-    sscanf(argv[1], "%d", &width);
-    if (argc > 2)
-      sscanf(argv[2], "%d", &height);
-    else
-      height = width;
-    if (argc > 3) {
-      fprintf(stderr, "Usage: %s [<width> [<height>]]\n", argv[0]);
-      return 1;
-    }
-  }
-
-  uiloop(height, width);
+  uiloop(MSTEP_GRID_HEIGHT, MSTEP_GRID_WIDTH);
 
   return 0;
 }

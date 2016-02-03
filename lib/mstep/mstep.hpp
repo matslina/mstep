@@ -4,12 +4,21 @@
 #define DEFAULT_TEMPO 120
 #define DEFAULT_CHANNEL 0
 
+#ifndef MSTEP_GRID_WIDTH
+#define MSTEP_GRID_WIDTH 16
+#endif
+
+#ifndef MSTEP_GRID_HEIGHT
+#define MSTEP_GRID_HEIGHT 8
+#endif
+
+#define GRID_BYTES (((MSTEP_GRID_WIDTH * MSTEP_GRID_HEIGHT) / 8) + \
+		    ((MSTEP_GRID_WIDTH * MSTEP_GRID_HEIGHT) % 8 ? 1 : 0))
+
 class Grid {
  public:
   virtual bool getPress(char *row, char *column) = 0;
   virtual void draw(char *state) = 0;
-  virtual char getWidth() = 0;
-  virtual char getHeight() = 0;
 };
 
 class MIDI {
@@ -45,6 +54,18 @@ class Display {
 
 typedef struct pattern_t pattern_t;
 
+struct pattern_t {
+  char grid[GRID_BYTES];
+  char note[MSTEP_GRID_HEIGHT];
+  char velocity[MSTEP_GRID_HEIGHT];
+  char active[MSTEP_GRID_HEIGHT];
+  char channel;
+  char activeChannel;
+  char column;
+  char swing;
+  int swingDelay;
+};
+
 class MStep {
 public:
   MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
@@ -57,15 +78,13 @@ private:
   Control *control;
   Display *display;
   MIDI *midi;
-  char *buf;
-  pattern_t *pattern;
-  pattern_t *clipboard;
+
+  pattern_t pattern[MSTEP_GRID_HEIGHT];
+  pattern_t clipboard;
   int activePattern;
-  char *gridOverlay;
-  char *gridBuf;
-  char gridStateSize;
-  char gridWidth;
-  char gridHeight;
+  char gridOverlay[GRID_BYTES];
+  char gridBuf[GRID_BYTES];
+
   int tempo;
   void (*sleep)(unsigned long);
   unsigned long (*time)(void);

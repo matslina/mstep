@@ -2,25 +2,15 @@
 
 #include "mstep.hpp"
 
+#define GRID_W MSTEP_GRID_WIDTH
+#define GRID_H MSTEP_GRID_HEIGHT
+
 #ifndef F
 #define F(x) (char *)x
 #endif
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
-
-
-struct pattern_t {
-  char *grid;
-  char *note;
-  char *velocity;
-  char *active;
-  char channel;
-  char activeChannel;
-  char column;
-  char swing;
-  int swingDelay;
-};
 
 class Mode {
 public:
@@ -41,44 +31,18 @@ MStep::MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
   this->sleep = sleep;
   this->time = time;
 
-  gridWidth = grid->getWidth();
-  gridHeight = grid->getHeight();
-  gridStateSize = (((gridWidth * gridHeight) / 8) +
-		   ((gridWidth * gridHeight) % 8 ? 1 : 0));
-
-  // this is a bit unwieldy, but helps track memory consumption
-  buf = (char *)malloc(gridStateSize + // gridOverlay
-		       gridStateSize + // gridBuf
-		       (gridHeight + 1) * sizeof(pattern_t) + // patterns
-		       (gridHeight + 1) * (gridStateSize + // pattern grids
-					   gridHeight + // pattern notes
-					   gridHeight + // pattern velocities
-					   gridHeight)); // pattern active notes
-
-  // assign pointers
-  gridOverlay = buf;
-  gridBuf     = buf + gridStateSize;
-  pattern = (pattern_t *)(buf + gridStateSize * 2);
-  char *tmpp = buf + gridStateSize * 2 + (gridHeight + 1) * sizeof(pattern_t);
-  for (int i = 0; i < gridHeight + 1; i++) {
-    pattern[i].grid = tmpp;
-    pattern[i].note = tmpp + gridStateSize;
-    pattern[i].velocity = tmpp + gridStateSize + gridHeight;
-    pattern[i].active = tmpp + gridStateSize + gridHeight * 2;
+  // pattern defaults
+  for (int i = 0; i < GRID_H; i++) {
     pattern[i].channel = DEFAULT_CHANNEL;
-    tmpp += gridStateSize + gridHeight * 3;
-  }
-
-  // initialize. this should load from eeprom or use a default.
-  for (int i = 0; i < gridStateSize; i++) gridOverlay[i] = 0;
-  for (int i = 0; i < gridStateSize; i++) gridBuf[i] = 0;
-  for (int i = 0; i < gridHeight + 1; i++) {
-    for (int j = 0; j < gridStateSize; j++) pattern[i].grid[j] = 0;
-    for (int j = 0; j < gridHeight; j++) pattern[i].note[j] = 36 + j;
-    for (int j = 0; j < gridHeight; j++) pattern[i].velocity[j] = 127;
-    for (int j = 0; j < gridHeight; j++) pattern[i].active[j] = -1;
     pattern[i].column = -1;
     pattern[i].swing = 50;
+    for (int j = 0; j < GRID_BYTES; j++)
+      pattern[i].grid[j] = 0;
+    for (int j = 0; j < GRID_H; j++) {
+      pattern[i].note[j] = 36 + j;
+      pattern[i].velocity[j] = 127;
+      pattern[i].active[j] = -1;
+    }
 
     // hard coded volca notes as defaults
     // hack hack hack hack hack
@@ -90,7 +54,6 @@ MStep::MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
     pattern[i].note[5] = 46;
     pattern[i].note[6] = 39;
   }
-  clipboard = &pattern[gridHeight];
 
   activePattern = 0;
   tempo = DEFAULT_TEMPO;
@@ -308,13 +271,13 @@ void MStep::playStart() {
   // that we overlay a hline but never call draw(), so playTick() will
   // clear it in the next invocation and the user only sees a column
   // light up in row 0. A bit of a kludge... =/
-  pattern[playPattern].column = gridWidth - 1;
+  pattern[playPattern].column = GRID_W - 1;
   overlayVline(pattern[playPattern].column);
 }
 
 void MStep::playStop() {
   // send note off for notes currently on
-  for (int i = 0; i < gridHeight; i ++) {
+  for (int i = 0; i < GRID_H; i ++) {
     if (pattern[playPattern].active[i] >= 0) {
       midi->noteOn(pattern[playPattern].channel,
 		   pattern[playPattern].active[i], 0);
@@ -342,7 +305,7 @@ int MStep::playTick() {
     return when - now;
 
   // note off for currently playing notes
-  for (int i = 0; i < gridHeight; i ++) {
+  for (int i = 0; i < GRID_H; i ++) {
     if (p->active[i] >= 0) {
       midi->noteOn(p->activeChannel, p->active[i], 0);
       p->active[i] = -1;
@@ -354,7 +317,7 @@ int MStep::playTick() {
   // drawing those columns. when wrapping around we always start
   // playing the displayed pattern.
   overlayVline(p->column);
-  if (++p->column == gridWidth) {
+  if (++p->column == GRID_W) {
     if (playPattern != activePattern) {
       p->column = -1;
       p = &pattern[activePattern];
@@ -366,8 +329,8 @@ int MStep::playTick() {
   draw();
 
   // note on according to the grid
-  for (int i = 0; i < gridHeight; i ++) {
-    pad = i * gridWidth + p->column;
+  for (int i = 0; i < GRID_H; i ++) {
+    pad = i * GRID_W + p->column;
     if (p->grid[pad / 8] & (1 << (pad % 8))) {
       midi->noteOn(p->channel, p->note[i], p->velocity[i]);
       p->active[i] = p->note[i];
@@ -376,10 +339,10 @@ int MStep::playTick() {
   p->activeChannel = p->channel;
 
   // schedule next step
-  playNext += (240000 / tempo) / gridWidth;
+  playNext += (240000 / tempo) / GRID_W;
   p->swingDelay = 0;
   if (!(p->column & 1))
-    p->swingDelay = ((float)(p->swing - 50) / 50) * (240000 / tempo) / gridWidth;
+    p->swingDelay = ((float)(p->swing - 50) / 50) * (240000 / tempo) / GRID_W;
 
   return MAX(0, playNext + p->swingDelay - time());
 }
@@ -393,7 +356,7 @@ void MStep::run() {
   int sleepDuration;
 
   PatternMode pmode = PatternMode(display, control, pattern,
-				  gridHeight, &activePattern);
+				  GRID_H, &activePattern);
   TempoMode tmode = TempoMode(display, control, &tempo);
 
   display->write(0, F("initializing"));
@@ -468,15 +431,15 @@ void MStep::run() {
     }
 
     if (event & Control::COPY) {
-      for (int i = 0; i < gridStateSize; i++) {
-	clipboard->grid[i] = pattern[activePattern].grid[i];
+      for (int i = 0; i < GRID_BYTES; i++) {
+	clipboard.grid[i] = pattern[activePattern].grid[i];
       }
     } else if (event & Control::PASTE) {
-      for (int i = 0; i < gridStateSize; i++)
-	pattern[activePattern].grid[i] |= clipboard->grid[i];
+      for (int i = 0; i < GRID_BYTES; i++)
+	pattern[activePattern].grid[i] |= clipboard.grid[i];
       draw();
     } else if (event & Control::CLEAR) {
-      for (int i = 0; i < gridStateSize; i++)
+      for (int i = 0; i < GRID_BYTES; i++)
 	pattern[activePattern].grid[i] = 0;
       draw();
     }
@@ -484,7 +447,7 @@ void MStep::run() {
     // unless in note mode, grid press updates grid state
     if (!(mode & Control::NOTE)) {
       while (grid->getPress(&row, &column)) {
-	pad = row * gridWidth + column;
+	pad = row * GRID_W + column;
 	pattern[activePattern].grid[pad >> 3] ^= 1 << (pad & 0x7);
 	draw();
       }
@@ -507,7 +470,7 @@ void MStep::run() {
 
 void MStep::draw() {
   if (activePattern == playPattern) {
-    for (int i = 0; i < gridStateSize; i++)
+    for (int i = 0; i < GRID_BYTES; i++)
       gridBuf[i] = pattern[playPattern].grid[i] ^ gridOverlay[i];
     grid->draw(gridBuf);
   }
@@ -516,26 +479,26 @@ void MStep::draw() {
 }
 
 void MStep::overlayVline(char column) {
-  for (int i = column; i < gridWidth * gridHeight; i += gridWidth)
+  for (int i = column; i < GRID_W * GRID_H; i += GRID_W)
     gridOverlay[i >> 3] ^= 1 << (i & 7);
 }
 
 void MStep::overlayHline(char row) {
-  for (int i = row * gridWidth; i < (row + 1) * gridWidth; i++)
+  for (int i = row * GRID_W; i < (row + 1) * GRID_W; i++)
     gridOverlay[i >> 3] ^= 1 << (i & 7);
 }
 
 void MStep::displayStartupSequence() {
-  for (int i=0; i < gridWidth * 2; i++) {
-    overlayVline(i % gridWidth);
+  for (int i=0; i < GRID_W * 2; i++) {
+    overlayVline(i % GRID_W);
     draw();
   }
 
-  for (int i=0; i < gridHeight * 2; i++) {
-    overlayHline(i % gridHeight);
+  for (int i=0; i < GRID_H * 2; i++) {
+    overlayHline(i % GRID_H);
     draw();
   }
 
-  for (int i=0; i < gridStateSize; i++)
+  for (int i=0; i < GRID_BYTES; i++)
     gridOverlay[i] = 0;
 }
