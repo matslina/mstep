@@ -185,68 +185,85 @@ public:
 
 };
 
+class NoteMode : Mode {
+public:
+  Grid *grid;
+  Display *display;
+  Control *control;
+  PatternController *pc;
+  int activeRow;
 
-
-void Sequencer::noteStart() {
-  activeRow = -1;
-  display->clear();
-  display->write(0, F("NOTE"));
-  display->write(1, F("  <select row>"));
-}
-
-void Sequencer::noteStop() {
-  pc->highlightRow = -1;
-  pc->draw();
-}
-
-void Sequencer::noteTick() {
-  bool rowChanged = false;
-  bool noteChanged = false;
-  char buf[16];
-  char row, column;
-  int mod;
-  int value;
-  int i;
-  const char *notes[] = {"C", "C#", "D", "D#", "E", "F",
-			 "F#", "G", "G#", "A", "A#", "B"};
-
-  while (grid->getPress(&row, &column)) {
-    rowChanged = true;
+  NoteMode(Grid *grid, Display *display, Control *control,
+	   PatternController *pc) {
+    this->grid = grid;
+    this->display = display;
+    this->control = control;
+    this->pc = pc;
   }
 
-  if (rowChanged) {
-    pc->highlightRow = row;
-    pc->draw();
-    this->activeRow = row;
-  }
-
-  if (this->activeRow < 0)
-    return;
-
-  value = pc->current->note[this->activeRow];
-
-  mod = control->getMod();
-  if (mod) {
-    value = MIN(127, MAX(0, value + mod));
-    noteChanged = true;
-  }
-
-  if (rowChanged || noteChanged) {
+  void start() {
+    activeRow = -1;
     display->clear();
     display->write(0, F("NOTE"));
-    i = appends(buf, F("  "));
-    i += appendi(buf + i, this->activeRow);
-    i += appends(buf + i, F(": "));
-    i += appends(buf + i, (char *)notes[value % 12]);
-    i += appendi(buf + i, value / 12 - 1);
-    i += appends(buf + i, F(" ("));
-    i += appendi(buf + i, value);
-    appends(buf + i, F(")"));
-    display->write(1, buf);
+    display->write(1, F("  <select row>"));
   }
 
-  pc->current->note[this->activeRow] = value;
-}
+  void stop() {
+    pc->highlightRow = -1;
+    pc->draw();
+  }
+
+  unsigned int tick() {
+    bool rowChanged = false;
+    bool noteChanged = false;
+    char buf[16];
+    char row, column;
+    int mod;
+    int value;
+    int i;
+    const char *notes[] = {"C", "C#", "D", "D#", "E", "F",
+			   "F#", "G", "G#", "A", "A#", "B"};
+
+    while (grid->getPress(&row, &column)) {
+      rowChanged = true;
+    }
+
+    if (rowChanged) {
+      pc->highlightRow = row;
+      pc->draw();
+      this->activeRow = row;
+    }
+
+    if (this->activeRow < 0)
+      return 100;
+
+    value = pc->current->note[this->activeRow];
+
+    mod = control->getMod();
+    if (mod) {
+      value = MIN(127, MAX(0, value + mod));
+      noteChanged = true;
+    }
+
+    if (rowChanged || noteChanged) {
+      display->clear();
+      display->write(0, F("NOTE"));
+      i = appends(buf, F("  "));
+      i += appendi(buf + i, this->activeRow);
+      i += appends(buf + i, F(": "));
+      i += appends(buf + i, (char *)notes[value % 12]);
+      i += appendi(buf + i, value / 12 - 1);
+      i += appends(buf + i, F(" ("));
+      i += appendi(buf + i, value);
+      appends(buf + i, F(")"));
+      display->write(1, buf);
+    }
+
+    pc->current->note[this->activeRow] = value;
+
+    return 100;
+  }
+};
 
 class TempoMode : Mode {
 public:
@@ -368,6 +385,7 @@ void Sequencer::run() {
   TempoMode tmode = TempoMode(display, control, &tempo);
   PatternController ppc = PatternController(grid);
   PatternMode pmode = PatternMode(display, control, &ppc, GRID_H);
+  NoteMode nmode = NoteMode(grid, display, control, &ppc);
   this->pc = &ppc;
 
   display->write(0, F("initializing"));
@@ -415,7 +433,7 @@ void Sequencer::run() {
       // so we stop the current mode
       switch (mode & ~Control::PLAY) {
       case Control::NOTE:
-	noteStop();
+	nmode.stop();
 	break;
       }
 
@@ -423,7 +441,7 @@ void Sequencer::run() {
       // case we bring back the default display
       switch (event & ~mode) {
       case Control::NOTE:
-	noteStart();
+	nmode.start();
 	break;
       case Control::TEMPO:
 	tmode.start();
@@ -466,7 +484,7 @@ void Sequencer::run() {
     // tick() according to mode
     switch (mode & ~Control::PLAY) {
     case Control::NOTE:
-      noteTick();
+      nmode.tick();
       break;
     case Control::TEMPO:
       tmode.tick();
