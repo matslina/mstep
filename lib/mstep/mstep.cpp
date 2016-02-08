@@ -43,13 +43,6 @@ private:
   void playStart();
   void playStop();
   int playTick();
-  void tempoStart();
-  void tempoTick();
-  void patternStart();
-  void patternTick();
-  void noteStart();
-  void noteStop();
-  void noteTick();
 };
 
 
