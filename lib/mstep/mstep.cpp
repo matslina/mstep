@@ -2,16 +2,13 @@
 
 #include "mstep.hpp"
 #include "stuff.hpp"
+#include "patterncontroller.hpp"
 
-#define GRID_W MSTEP_GRID_WIDTH
-#define GRID_H MSTEP_GRID_HEIGHT
 
 #ifndef F
 #define F(x) (char *)x
 #endif
 
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 class Mode {
 public:
@@ -19,6 +16,40 @@ public:
   virtual void stop() = 0;
   virtual unsigned int tick() = 0;
 private:
+};
+
+class Sequencer {
+public:
+  Sequencer(Grid *grid, Control *control, Display *display, MIDI *midi,
+	    void (*sleep)(unsigned long),
+	    unsigned long (*time)(void));
+  void run();
+
+private:
+  Grid *grid;
+  Control *control;
+  Display *display;
+  MIDI *midi;
+  pattern_t clipboard;
+  pattern_t *playing;
+  PatternController *pc;
+
+  int tempo;
+  void (*sleep)(unsigned long);
+  unsigned long (*time)(void);
+  char activeRow;
+  char activePattern;
+  unsigned long int playNext;
+  void playStart();
+  void playStop();
+  int playTick();
+  void tempoStart();
+  void tempoTick();
+  void patternStart();
+  void patternTick();
+  void noteStart();
+  void noteStop();
+  void noteTick();
 };
 
 
@@ -38,7 +69,6 @@ void MStep::run() {
   s.run();
 }
 
-
 Sequencer::Sequencer(Grid *grid, Control *control, Display *display, MIDI *midi,
 		     void (*sleep)(unsigned long),
 		     unsigned long (*time)(void)) {
@@ -49,29 +79,6 @@ Sequencer::Sequencer(Grid *grid, Control *control, Display *display, MIDI *midi,
   this->sleep = sleep;
   this->time = time;
 
-  // pattern defaults
-  for (int i = 0; i < GRID_H; i++) {
-    pattern[i].channel = DEFAULT_CHANNEL;
-    pattern[i].column = -1;
-    pattern[i].swing = 50;
-    for (int j = 0; j < GRID_BYTES; j++)
-      pattern[i].grid[j] = 0;
-    for (int j = 0; j < GRID_H; j++) {
-      pattern[i].note[j] = 36 + j;
-      pattern[i].velocity[j] = 127;
-      pattern[i].active[j] = -1;
-    }
-
-    // hard coded volca notes as defaults
-    // hack hack hack hack hack
-    pattern[i].note[0] = 36;
-    pattern[i].note[1] = 38;
-    pattern[i].note[2] = 43;
-    pattern[i].note[3] = 50;
-    pattern[i].note[4] = 42;
-    pattern[i].note[5] = 46;
-    pattern[i].note[6] = 39;
-  }
 
   activePattern = 0;
   tempo = DEFAULT_TEMPO;
@@ -124,22 +131,20 @@ public:
   int field;
   Display *display;
   Control *control;
-  pattern_t *pattern;
+  PatternController *pc;
   int npattern;
-  int *active;
 
-  PatternMode(Display *display, Control *control, pattern_t *pattern,
-	      int npattern, int *active) {
+  PatternMode(Display *display, Control *control, PatternController *pc,
+	      int npattern) {
     this->display = display;
     this->control = control;
-    this->pattern = pattern;
+    this->pc = pc;
     this->npattern = npattern;
-    this->active = active;
   }
 
   void start() {
     field = 0;
-    displayInteger(display, "PATTERN       >", *active);
+    displayInteger(display, "PATTERN       >", pc->currentIndex);
   }
 
   void stop() {
@@ -161,17 +166,17 @@ public:
 
     switch (field) {
     case 0:
-      *active = MIN(npattern - 1, MAX(0, *active + mod));
-      displayInteger(display, F("PATTERN"), *active);
+      pc->change(mod);
+      displayInteger(display, F("PATTERN"), pc->currentIndex);
       // FIXME: grid has to be redrawn here
       break;
     case 1:
-      pattern[*active].swing = MIN(75, MAX(50, pattern[*active].swing + mod));
-      displayInteger(display, F("SWING"), pattern[*active].swing);
+      pc->current->swing = MIN(75, MAX(50, pc->current->swing + mod));
+      displayInteger(display, F("SWING"), pc->current->swing);
       break;
     case 2:
-      pattern[*active].channel = MIN(16, MAX(1, pattern[*active].channel + mod));
-      displayInteger(display, F("CHANNEL"), pattern[*active].channel);
+      pc->current->channel = MIN(16, MAX(1, pc->current->channel + mod));
+      displayInteger(display, F("CHANNEL"), pc->current->channel);
       break;
     }
 
@@ -190,11 +195,8 @@ void Sequencer::noteStart() {
 }
 
 void Sequencer::noteStop() {
-  if (activeRow > -1) {
-    overlayHline(activeRow);
-    draw();
-  }
-  activeRow = -1;
+  pc->highlightRow = -1;
+  pc->draw();
 }
 
 void Sequencer::noteTick() {
@@ -213,17 +215,15 @@ void Sequencer::noteTick() {
   }
 
   if (rowChanged) {
-    if (this->activeRow > -1)
-      overlayHline(this->activeRow);
-    overlayHline(row);
-    draw();
+    pc->highlightRow = row;
+    pc->draw();
     this->activeRow = row;
   }
 
   if (this->activeRow < 0)
     return;
 
-  value = pattern[activePattern].note[this->activeRow];
+  value = pc->current->note[this->activeRow];
 
   mod = control->getMod();
   if (mod) {
@@ -245,7 +245,7 @@ void Sequencer::noteTick() {
     display->write(1, buf);
   }
 
-  pattern[activePattern].note[this->activeRow] = value;
+  pc->current->note[this->activeRow] = value;
 }
 
 class TempoMode : Mode {
@@ -280,35 +280,24 @@ public:
 };
 
 void Sequencer::playStart() {
-  playPattern = activePattern;
-
-  // schedule next step to happen immediately
+  playing = pc->current;
   playNext = time();
-  pattern[playPattern].swingDelay = 0;
-
-  // pretend we just played the final column so that the next
-  // playTick() progresses to the first column to start playback. note
-  // that we overlay a hline but never call draw(), so playTick() will
-  // clear it in the next invocation and the user only sees a column
-  // light up in row 0. A bit of a kludge... =/
-  pattern[playPattern].column = GRID_W - 1;
-  overlayVline(pattern[playPattern].column);
+  playing->swingDelay = 0;
 }
 
 void Sequencer::playStop() {
   // send note off for notes currently on
   for (int i = 0; i < GRID_H; i ++) {
-    if (pattern[playPattern].active[i] >= 0) {
-      midi->noteOn(pattern[playPattern].channel,
-		   pattern[playPattern].active[i], 0);
-      pattern[playPattern].active[i] = -1;
+    if (playing->active[i] >= 0) {
+      midi->noteOn(playing->channel, playing->active[i], 0);
+      playing->active[i] = -1;
     }
   }
 
   // and clear the grid
-  overlayVline(pattern[playPattern].column);
-  pattern[playPattern].column = -1;
-  draw();
+  pc->highlightColumn = -1;
+  pc->draw();
+  playing->column = -1;
 }
 
 int Sequencer::playTick() {
@@ -317,7 +306,7 @@ int Sequencer::playTick() {
   unsigned long int now;
   unsigned long int when;
 
-  p = &pattern[playPattern];
+  p = playing;
 
   now = time();
   when = playNext + p->swingDelay;
@@ -336,17 +325,18 @@ int Sequencer::playTick() {
   // one currently displayed (activePattern), so take care when
   // drawing those columns. when wrapping around we always start
   // playing the displayed pattern.
-  overlayVline(p->column);
   if (++p->column == GRID_W) {
-    if (playPattern != activePattern) {
+    if (playing != pc->current) {
       p->column = -1;
-      p = &pattern[activePattern];
+      playing = pc->current;
+      p = pc->current;
     }
-    playPattern = activePattern;
     p->column = 0;
   }
-  overlayVline(p->column);
-  draw();
+  pc->highlightColumn = p->column;
+  if (playing != pc->current)
+    pc->highlightColumn = -1;
+  pc->draw();
 
   // note on according to the grid
   for (int i = 0; i < GRID_H; i ++) {
@@ -375,15 +365,15 @@ void Sequencer::run() {
   int mode;
   int sleepDuration;
 
-  PatternMode pmode = PatternMode(display, control, pattern,
-				  GRID_H, &activePattern);
   TempoMode tmode = TempoMode(display, control, &tempo);
+  PatternController ppc = PatternController(grid);
+  PatternMode pmode = PatternMode(display, control, &ppc, GRID_H);
+  this->pc = &ppc;
 
   display->write(0, F("initializing"));
-  displayStartupSequence();
   mode = 0;
   control->indicate(mode);
-  draw();
+  ppc.draw();
   while (grid->getPress(&row, &column));
   display->clear();
   display->write(0, F("MStep 4711"));
@@ -452,24 +442,24 @@ void Sequencer::run() {
 
     if (event & Control::COPY) {
       for (int i = 0; i < GRID_BYTES; i++) {
-	clipboard.grid[i] = pattern[activePattern].grid[i];
+	clipboard.grid[i] = ppc.current->grid[i];
       }
     } else if (event & Control::PASTE) {
       for (int i = 0; i < GRID_BYTES; i++)
-	pattern[activePattern].grid[i] |= clipboard.grid[i];
-      draw();
+	ppc.current->grid[i] |= clipboard.grid[i];
+      ppc.draw();
     } else if (event & Control::CLEAR) {
       for (int i = 0; i < GRID_BYTES; i++)
-	pattern[activePattern].grid[i] = 0;
-      draw();
+	ppc.current->grid[i] = 0;
+      ppc.draw();
     }
 
     // unless in note mode, grid press updates grid state
     if (!(mode & Control::NOTE)) {
       while (grid->getPress(&row, &column)) {
 	pad = row * GRID_W + column;
-	pattern[activePattern].grid[pad >> 3] ^= 1 << (pad & 0x7);
-	draw();
+	ppc.current->grid[pad >> 3] ^= 1 << (pad & 0x7);
+	ppc.draw();
       }
     }
 
@@ -486,39 +476,4 @@ void Sequencer::run() {
       break;
     }
   }
-}
-
-void Sequencer::draw() {
-  if (activePattern == playPattern) {
-    for (int i = 0; i < GRID_BYTES; i++)
-      gridBuf[i] = pattern[playPattern].grid[i] ^ gridOverlay[i];
-    grid->draw(gridBuf);
-  }
-  else
-    grid->draw(pattern[activePattern].grid);
-}
-
-void Sequencer::overlayVline(char column) {
-  for (int i = column; i < GRID_W * GRID_H; i += GRID_W)
-    gridOverlay[i >> 3] ^= 1 << (i & 7);
-}
-
-void Sequencer::overlayHline(char row) {
-  for (int i = row * GRID_W; i < (row + 1) * GRID_W; i++)
-    gridOverlay[i >> 3] ^= 1 << (i & 7);
-}
-
-void Sequencer::displayStartupSequence() {
-  for (int i=0; i < GRID_W * 2; i++) {
-    overlayVline(i % GRID_W);
-    draw();
-  }
-
-  for (int i=0; i < GRID_H * 2; i++) {
-    overlayHline(i % GRID_H);
-    draw();
-  }
-
-  for (int i=0; i < GRID_BYTES; i++)
-    gridOverlay[i] = 0;
 }
