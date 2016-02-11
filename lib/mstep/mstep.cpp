@@ -3,6 +3,7 @@
 #include "mstep.hpp"
 #include "stuff.hpp"
 #include "patterncontroller.hpp"
+#include "displaywriter.hpp"
 
 
 #ifndef F
@@ -33,6 +34,7 @@ private:
   pattern_t clipboard;
   pattern_t *playing;
   PatternController *pc;
+  DisplayWriter *displayWriter;
 
   int tempo;
   void (*sleep)(unsigned long);
@@ -78,58 +80,17 @@ Sequencer::Sequencer(Grid *grid, Control *control, Display *display, MIDI *midi,
   activeRow = -1;
 }
 
-static int appends(char *buf, char *s) {
-  int i = 0;
-
-  while (*s) {
-    buf[i++] = *s;
-    s++;
-  }
-  buf[i] = '\0';
-
-  return i;
-}
-
-static int appendi(char *buf, int v) {
-  int i = 0;
-  int n = v;
-
-  if (v > 99) {
-    buf[i++] = n / 100 + '0';
-    n %= 100;
-  }
-  if (v > 9) {
-    buf[i++] = n / 10 + '0';
-    n %= 10;
-  }
-  buf[i++] = n + '0';
-  buf[i] = '\0';
-
-  return i;
-}
-
-static void displayInteger(Display *display, char *name, int value) {
-  char buf[16];
-  int i = 0;
-  display->clear();
-  display->write(0, name);
-  i += appends(buf, "  ");
-  appendi(buf + i, value);
-  display->write(1, buf);
-}
-
-
 class PatternMode : Mode {
 public:
   int field;
-  Display *display;
+  DisplayWriter *displayWriter;
   Control *control;
   PatternController *pc;
   int npattern;
 
-  PatternMode(Display *display, Control *control, PatternController *pc,
+  PatternMode(DisplayWriter *displayWriter, Control *control, PatternController *pc,
 	      int npattern) {
-    this->display = display;
+    this->displayWriter = displayWriter;
     this->control = control;
     this->pc = pc;
     this->npattern = npattern;
@@ -137,7 +98,7 @@ public:
 
   void start() {
     field = 0;
-    displayInteger(display, "PATTERN       >", pc->currentIndex);
+    displayWriter->clear()->namedInteger("PATTERN       >", pc->currentIndex);
   }
 
   void stop() {
@@ -157,19 +118,20 @@ public:
     if (!mod && !displayAnyway)
       return 100;
 
+    displayWriter->clear();
     switch (field) {
     case 0:
       pc->change(mod);
-      displayInteger(display, F("PATTERN"), pc->currentIndex);
+      displayWriter->namedInteger("PATTERN       >", pc->currentIndex);
       // FIXME: grid has to be redrawn here
       break;
     case 1:
       pc->current->swing = MIN(75, MAX(50, pc->current->swing + mod));
-      displayInteger(display, F("SWING"), pc->current->swing);
+      displayWriter->namedInteger("SWING         >", pc->current->swing);
       break;
     case 2:
       pc->current->channel = MIN(16, MAX(1, pc->current->channel + mod));
-      displayInteger(display, F("CHANNEL"), pc->current->channel);
+      displayWriter->namedInteger("CHANNEL       >", pc->current->channel);
       break;
     }
 
@@ -181,24 +143,23 @@ public:
 class NoteMode : Mode {
 public:
   Grid *grid;
-  Display *display;
+  DisplayWriter *displayWriter;
   Control *control;
   PatternController *pc;
   int activeRow;
 
-  NoteMode(Grid *grid, Display *display, Control *control,
+  NoteMode(Grid *grid, DisplayWriter *displayWriter, Control *control,
 	   PatternController *pc) {
     this->grid = grid;
-    this->display = display;
+    this->displayWriter = displayWriter;
     this->control = control;
     this->pc = pc;
   }
 
   void start() {
     activeRow = -1;
-    display->clear();
-    display->write(0, F("NOTE"));
-    display->write(1, F("  <select row>"));
+    displayWriter->clear()->string("NOTE")->cr();
+    displayWriter->string("  <select row>")->cr();
   }
 
   void stop() {
@@ -239,17 +200,9 @@ public:
     }
 
     if (rowChanged || noteChanged) {
-      display->clear();
-      display->write(0, F("NOTE"));
-      i = appends(buf, F("  "));
-      i += appendi(buf + i, this->activeRow);
-      i += appends(buf + i, F(": "));
-      i += appends(buf + i, (char *)notes[value % 12]);
-      i += appendi(buf + i, value / 12 - 1);
-      i += appends(buf + i, F(" ("));
-      i += appendi(buf + i, value);
-      appends(buf + i, F(")"));
-      display->write(1, buf);
+      displayWriter->clear()->string("NOTE")->cr()->		\
+	string("  ")->integer(activeRow)->string(": ")->	\
+	note(value)->cr();
     }
 
     pc->current->note[this->activeRow] = value;
@@ -260,18 +213,18 @@ public:
 
 class TempoMode : Mode {
 public:
-  Display *display;
+  DisplayWriter *displayWriter;
   Control *control;
   int *tempo;
 
-  TempoMode(Display *display, Control *control, int *tempo) {
-    this->display = display;
+  TempoMode(DisplayWriter *displayWriter, Control *control, int *tempo) {
+    this->displayWriter = displayWriter;
     this->control = control;
     this->tempo = tempo;
   }
 
   void start() {
-    displayInteger(display, F("TEMPO"), *tempo);
+    displayWriter->clear()->namedInteger("TEMPO", *tempo);
   }
 
   void stop() {
@@ -285,7 +238,7 @@ public:
       return 123123;
 
     *tempo = MIN(240, MAX(1, *tempo + mod));
-    displayInteger(display, F("TEMPO"), *tempo);
+    displayWriter->clear()->namedInteger("TEMPO", *tempo);
   }
 };
 
@@ -375,20 +328,20 @@ void Sequencer::run() {
   int mode;
   int sleepDuration;
 
-  TempoMode tmode = TempoMode(display, control, &tempo);
+  DisplayWriter dw = DisplayWriter(display);
+  TempoMode tmode = TempoMode(&dw, control, &tempo);
   PatternController ppc = PatternController(grid);
-  PatternMode pmode = PatternMode(display, control, &ppc, GRID_H);
-  NoteMode nmode = NoteMode(grid, display, control, &ppc);
+  PatternMode pmode = PatternMode(&dw, control, &ppc, GRID_H);
+  NoteMode nmode = NoteMode(grid, &dw, control, &ppc);
   this->pc = &ppc;
+  this->displayWriter = &dw;
 
-  display->write(0, F("initializing"));
+  displayWriter->clear()->string("initializing")->cr();
   mode = 0;
   control->indicate(mode);
   ppc.draw();
   while (grid->getPress(&row, &column));
-  display->clear();
-  display->write(0, F("MStep 4711"));
-  display->write(1, F("  ready"));
+  displayWriter->clear()->string("MStep 4711")->cr()->string("  ready")->cr();
 
   while (1) {
 
@@ -443,7 +396,7 @@ void Sequencer::run() {
 	pmode.start();
 	break;
       default:
-	display->clear();
+	displayWriter->clear();
 	break;
       }
 
