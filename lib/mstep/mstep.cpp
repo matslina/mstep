@@ -36,7 +36,6 @@ private:
   PatternController *pc;
   DisplayWriter *displayWriter;
 
-  int tempo;
   void (*sleep)(unsigned long);
   unsigned long (*time)(void);
   char activeRow;
@@ -76,7 +75,6 @@ Sequencer::Sequencer(Grid *grid, Control *control, Display *display, MIDI *midi,
 
 
   activePattern = 0;
-  tempo = DEFAULT_TEMPO;
   activeRow = -1;
 }
 
@@ -242,83 +240,106 @@ public:
   }
 };
 
-void Sequencer::playStart() {
-  playing = pc->current;
-  playNext = time();
-  playing->swingDelay = 0;
-}
+class PlayMode : Mode {
+public:
+  MIDI *midi;
+  PatternController *pc;
+  void (*sleep)(unsigned long);
+  unsigned long (*time)(void);
+  int *tempo;
+  pattern_t *playing;
+  unsigned long int playNext;
 
-void Sequencer::playStop() {
-  // send note off for notes currently on
-  for (int i = 0; i < GRID_H; i ++) {
-    if (playing->active[i] >= 0) {
-      midi->noteOn(playing->channel, playing->active[i], 0);
-      playing->active[i] = -1;
-    }
+  PlayMode(MIDI *midi,
+	   void (*sleep)(unsigned long),
+	   unsigned long (*time)(void),
+	   PatternController *pc,
+	   int *tempo) {
+    this->midi = midi;
+    this->pc = pc;
+    this->sleep = sleep;
+    this->time = time;
+    this->tempo = tempo;
   }
 
-  // and clear the grid
-  pc->highlightColumn = -1;
-  pc->draw();
-  playing->column = -1;
-}
-
-int Sequencer::playTick() {
-  int pad;
-  pattern_t *p;
-  unsigned long int now;
-  unsigned long int when;
-
-  p = playing;
-
-  now = time();
-  when = playNext + p->swingDelay;
-  if (when > now)
-    return when - now;
-
-  // note off for currently playing notes
-  for (int i = 0; i < GRID_H; i ++) {
-    if (p->active[i] >= 0) {
-      midi->noteOn(p->activeChannel, p->active[i], 0);
-      p->active[i] = -1;
-    }
+  void start() {
+    playing = pc->current;
+    playing->swingDelay = 0;
+    playNext = time();
   }
 
-  // step one column forward. currently played pattern may not be the
-  // one currently displayed (activePattern), so take care when
-  // drawing those columns. when wrapping around we always start
-  // playing the displayed pattern.
-  if (++p->column == GRID_W) {
-    if (playing != pc->current) {
-      p->column = -1;
-      playing = pc->current;
-      p = pc->current;
+  void stop() {
+    // send note off for notes currently on
+    for (int i = 0; i < GRID_H; i ++) {
+      if (playing->active[i] >= 0) {
+	midi->noteOn(playing->channel, playing->active[i], 0);
+	playing->active[i] = -1;
+      }
     }
-    p->column = 0;
-  }
-  pc->highlightColumn = p->column;
-  if (playing != pc->current)
+
+    // and clear the grid
     pc->highlightColumn = -1;
-  pc->draw();
-
-  // note on according to the grid
-  for (int i = 0; i < GRID_H; i ++) {
-    pad = i * GRID_W + p->column;
-    if (p->grid[pad / 8] & (1 << (pad % 8))) {
-      midi->noteOn(p->channel, p->note[i], p->velocity[i]);
-      p->active[i] = p->note[i];
-    }
+    pc->draw();
+    playing->column = -1;
   }
-  p->activeChannel = p->channel;
 
-  // schedule next step
-  playNext += (240000 / tempo) / GRID_W;
-  p->swingDelay = 0;
-  if (!(p->column & 1))
-    p->swingDelay = ((float)(p->swing - 50) / 50) * (240000 / tempo) / GRID_W;
+  unsigned int tick() {
+    int pad;
+    pattern_t *p;
+    unsigned long int now;
+    unsigned long int when;
 
-  return MAX(0, playNext + p->swingDelay - time());
-}
+    p = playing;
+
+    now = time();
+    when = playNext + p->swingDelay;
+    if (when > now)
+      return when - now;
+
+    // note off for currently playing notes
+    for (int i = 0; i < GRID_H; i ++) {
+      if (p->active[i] >= 0) {
+	midi->noteOn(p->activeChannel, p->active[i], 0);
+	p->active[i] = -1;
+      }
+    }
+
+    // step one column forward. currently played pattern may not be the
+    // one currently displayed (activePattern), so take care when
+    // drawing those columns. when wrapping around we always start
+    // playing the displayed pattern.
+    if (++p->column == GRID_W) {
+      if (playing != pc->current) {
+	p->column = -1;
+	playing = pc->current;
+	p = pc->current;
+      }
+      p->column = 0;
+    }
+    pc->highlightColumn = p->column;
+    if (playing != pc->current)
+      pc->highlightColumn = -1;
+    pc->draw();
+
+    // note on according to the grid
+    for (int i = 0; i < GRID_H; i ++) {
+      pad = i * GRID_W + p->column;
+      if (p->grid[pad / 8] & (1 << (pad % 8))) {
+	midi->noteOn(p->channel, p->note[i], p->velocity[i]);
+	p->active[i] = p->note[i];
+      }
+    }
+    p->activeChannel = p->channel;
+
+    // schedule next step
+    playNext += (240000 / *tempo) / GRID_W;
+    p->swingDelay = 0;
+    if (!(p->column & 1))
+      p->swingDelay = ((float)(p->swing - 50) / 50) * (240000 / *tempo) / GRID_W;
+
+    return MAX(0, playNext + p->swingDelay - time());
+  }
+};
 
 
 void Sequencer::run() {
@@ -327,14 +348,17 @@ void Sequencer::run() {
   int event;
   int mode;
   int sleepDuration;
+  int tempo = DEFAULT_TEMPO;
 
   DisplayWriter dw = DisplayWriter(display);
   TempoMode tmode = TempoMode(&dw, control, &tempo);
   PatternController ppc = PatternController(grid);
   PatternMode pmode = PatternMode(&dw, control, &ppc, GRID_H);
   NoteMode nmode = NoteMode(grid, &dw, control, &ppc);
+  PlayMode player = PlayMode(midi, sleep, time, &ppc, &tempo);
   this->pc = &ppc;
   this->displayWriter = &dw;
+
 
   displayWriter->clear()->string("initializing")->cr();
   mode = 0;
@@ -348,7 +372,7 @@ void Sequencer::run() {
     // playback is prio 1. don't bother processing events unless we
     // have "enough" time.
     if (mode & Control::PLAY) {
-      sleepDuration = playTick();
+      sleepDuration = player.tick();
       if (sleepDuration < 30) {
 	sleep(sleepDuration);
 	continue;
@@ -363,9 +387,9 @@ void Sequencer::run() {
       break;
     if (event & Control::PLAY) {
       if (mode & Control::PLAY)
-	playStop();
+	player.stop();
       else
-	playStart();
+	player.start();
       mode ^= event & Control::PLAY;
       control->indicate(mode);
     }
