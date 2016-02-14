@@ -265,7 +265,6 @@ AdaControl control = AdaControl();
 AdaDisplay display = AdaDisplay();
 AdaMIDI midi = AdaMIDI();
 
-MStep mstep = MStep(&grid, &control, &display, &midi, &delay, &millis);
 
 void setup() {
   grid.initialize();
@@ -275,5 +274,5 @@ void setup() {
 }
 
 void loop() {
-  mstep.run();
+  mstep_run(&grid, &control, &display, &midi, &delay, &millis);
 }
