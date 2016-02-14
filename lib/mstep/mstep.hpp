@@ -50,20 +50,8 @@ class Display {
   virtual void clear() = 0;
 };
 
-
-class MStep {
-public:
-  MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
-	void (*sleep)(unsigned long),
-	unsigned long (*time)(void));
-  void run();
-private:
-  Grid *grid;
-  Control *control;
-  Display *display;
-  MIDI *midi;
-  void (*sleep)(unsigned long);
-  unsigned long (*time)(void);
-};
+void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
+	       void (*sleep)(unsigned long),
+	       unsigned long (*time)(void));
 
 #endif

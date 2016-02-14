@@ -349,8 +349,17 @@ unsigned long timems() {
 	  ((signed long)now.tv_usec - (signed long)start->tv_usec) / 1000);
 }
 
-void *mstep_run(void *mstep) {
-  ((MStep *)mstep)->run();
+struct mstep_args {
+  CursesGrid *grid;
+  CursesMIDI *midi;
+  CursesDisplay *display;
+  CursesControl *control;
+};
+
+void *mstep_run_thread(void *args) {
+  struct mstep_args *margs = (struct mstep_args *)args;
+  mstep_run(margs->grid, margs->control, margs->display, margs->midi,
+	    sleepms, timems);
 }
 
 int uiloop(int grid_rows, int grid_columns) {
@@ -358,7 +367,6 @@ int uiloop(int grid_rows, int grid_columns) {
   CursesMIDI *midi;
   CursesDisplay *display;
   CursesControl *control;
-  MStep *mstep;
   pthread_t thread_mstep;
   pthread_mutex_t mutex_curses;
   int pos;
@@ -379,9 +387,9 @@ int uiloop(int grid_rows, int grid_columns) {
 			grid_rows, grid_columns);
   control = new CursesControl(&mutex_curses, display->width + 1, 1, display->height);
   midi = new CursesMIDI(&mutex_curses, 1, display->height + grid->height + 1, 10);
-  mstep = new MStep(grid, control, display, midi, sleepms, timems);
 
-  pthread_create(&thread_mstep, NULL, mstep_run, mstep);
+  struct mstep_args args = {grid, midi, display, control};
+  pthread_create(&thread_mstep, NULL, mstep_run_thread, &args);
 
   while (1) {
     pthread_mutex_lock(&mutex_curses);

@@ -15,90 +15,30 @@
 #endif
 
 
-class Sequencer {
-public:
-  Sequencer(Grid *grid, Control *control, Display *display, MIDI *midi,
-	    void (*sleep)(unsigned long),
-	    unsigned long (*time)(void));
-  void run();
-
-private:
-  Grid *grid;
-  Control *control;
-  Display *display;
-  MIDI *midi;
-  pattern_t clipboard;
-  pattern_t *playing;
-  PatternController *pc;
-  DisplayWriter *displayWriter;
-
-  void (*sleep)(unsigned long);
-  unsigned long (*time)(void);
-  char activeRow;
-  char activePattern;
-  unsigned long int playNext;
-  void playStart();
-  void playStop();
-  int playTick();
-};
-
-
-MStep::MStep(Grid *grid, Control *control, Display *display, MIDI *midi,
-	     void (*sleep)(unsigned long),
-	     unsigned long (*time)(void)) {
-  this->grid = grid;
-  this->control = control;
-  this->display = display;
-  this->midi = midi;
-  this->sleep = sleep;
-  this->time = time;
-}
-
-void MStep::run() {
-  Sequencer s = Sequencer(grid, control, display, midi, sleep, time);
-  s.run();
-}
-
-Sequencer::Sequencer(Grid *grid, Control *control, Display *display, MIDI *midi,
-		     void (*sleep)(unsigned long),
-		     unsigned long (*time)(void)) {
-  this->grid = grid;
-  this->control = control;
-  this->display = display;
-  this->midi = midi;
-  this->sleep = sleep;
-  this->time = time;
-
-
-  activePattern = 0;
-  activeRow = -1;
-}
-
-
-void Sequencer::run() {
+void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
+	       void (*sleep)(unsigned long),
+	       unsigned long (*time)(void)) {
   char row, column;
   int pad;
   int event;
   int mode;
   int sleepDuration;
   int tempo = DEFAULT_TEMPO;
+  pattern_t clipboard;
 
-  DisplayWriter dw = DisplayWriter(display);
-  TempoMode tmode = TempoMode(&dw, control, &tempo);
+  DisplayWriter displayWriter = DisplayWriter(display);
+  TempoMode tmode = TempoMode(&displayWriter, control, &tempo);
   PatternController ppc = PatternController(grid);
-  PatternMode pmode = PatternMode(&dw, control, &ppc, GRID_H);
-  NoteMode nmode = NoteMode(grid, &dw, control, &ppc);
+  PatternMode pmode = PatternMode(&displayWriter, control, &ppc, GRID_H);
+  NoteMode nmode = NoteMode(grid, &displayWriter, control, &ppc);
   PlayMode player = PlayMode(midi, sleep, time, &ppc, &tempo);
-  this->pc = &ppc;
-  this->displayWriter = &dw;
 
-
-  displayWriter->clear()->string("initializing")->cr();
+  displayWriter.clear()->string("initializing")->cr();
   mode = 0;
   control->indicate(mode);
   ppc.draw();
   while (grid->getPress(&row, &column));
-  displayWriter->clear()->string("MStep 4711")->cr()->string("  ready")->cr();
+  displayWriter.clear()->string("MStep 4711")->cr()->string("  ready")->cr();
 
   while (1) {
 
@@ -153,7 +93,7 @@ void Sequencer::run() {
 	pmode.start();
 	break;
       default:
-	displayWriter->clear();
+	displayWriter.clear();
 	break;
       }
 
