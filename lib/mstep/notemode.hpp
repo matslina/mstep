@@ -36,17 +36,12 @@ public:
   unsigned int tick() {
     bool rowChanged = false;
     bool noteChanged = false;
-    char buf[16];
     char row, column;
     int mod;
     int value;
-    int i;
-    const char *notes[] = {"C", "C#", "D", "D#", "E", "F",
-			   "F#", "G", "G#", "A", "A#", "B"};
 
-    while (grid->getPress(&row, &column)) {
+    while (grid->getPress(&row, &column))
       rowChanged = true;
-    }
 
     if (rowChanged) {
       pc->highlightRow = row;
@@ -67,7 +62,7 @@ public:
 
     if (rowChanged || noteChanged) {
       displayWriter->clear()->string("NOTE")->cr()->		\
-	string("  ")->integer(activeRow)->string(": ")->	\
+        string("  ")->integer(this->activeRow)->string(": ")->	\
 	note(value)->cr();
     }
 

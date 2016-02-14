@@ -12,14 +12,11 @@ public:
   DisplayWriter *displayWriter;
   Control *control;
   PatternController *pc;
-  int npattern;
 
-  PatternMode(DisplayWriter *displayWriter, Control *control, PatternController *pc,
-	      int npattern) {
+  PatternMode(DisplayWriter *displayWriter, Control *control, PatternController *pc) {
     this->displayWriter = displayWriter;
     this->control = control;
     this->pc = pc;
-    this->npattern = npattern;
   }
 
   void start() {
@@ -49,7 +46,6 @@ public:
     case 0:
       pc->change(mod);
       displayWriter->namedInteger("PATTERN       >", pc->currentIndex);
-      // FIXME: grid has to be redrawn here
       break;
     case 1:
       pc->current->swing = MIN(75, MAX(50, pc->current->swing + mod));

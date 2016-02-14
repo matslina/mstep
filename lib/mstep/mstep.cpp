@@ -1,5 +1,3 @@
-#include <stdlib.h>
-
 #include "mstep.hpp"
 #include "stuff.hpp"
 #include "patterncontroller.hpp"
@@ -9,10 +7,6 @@
 #include "notemode.hpp"
 #include "tempomode.hpp"
 #include "playmode.hpp"
-
-#ifndef F
-#define F(x) (char *)x
-#endif
 
 
 void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
@@ -27,13 +21,13 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
   pattern_t clipboard;
 
   DisplayWriter displayWriter = DisplayWriter(display);
-  TempoMode tmode = TempoMode(&displayWriter, control, &tempo);
   PatternController ppc = PatternController(grid);
-  PatternMode pmode = PatternMode(&displayWriter, control, &ppc, GRID_H);
+
+  TempoMode tmode = TempoMode(&displayWriter, control, &tempo);
+  PatternMode pmode = PatternMode(&displayWriter, control, &ppc);
   NoteMode nmode = NoteMode(grid, &displayWriter, control, &ppc);
   PlayMode player = PlayMode(midi, sleep, time, &ppc, &tempo);
 
-  displayWriter.clear()->string("initializing")->cr();
   mode = 0;
   control->indicate(mode);
   ppc.draw();

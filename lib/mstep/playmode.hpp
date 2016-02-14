@@ -50,59 +50,57 @@ public:
 
   unsigned int tick() {
     int pad;
-    pattern_t *p;
     unsigned long int now;
     unsigned long int when;
 
-    p = playing;
-
     now = time();
-    when = playNext + p->swingDelay;
+    when = playNext + playing->swingDelay;
     if (when > now)
       return when - now;
 
     // note off for currently playing notes
     for (int i = 0; i < GRID_H; i ++) {
-      if (p->active[i] >= 0) {
-	midi->noteOn(p->activeChannel, p->active[i], 0);
-	p->active[i] = -1;
+      if (playing->active[i] >= 0) {
+	midi->noteOn(playing->activeChannel, playing->active[i], 0);
+	playing->active[i] = -1;
       }
     }
 
-    // step one column forward. currently played pattern may not be the
-    // one currently displayed (activePattern), so take care when
-    // drawing those columns. when wrapping around we always start
-    // playing the displayed pattern.
-    if (++p->column == GRID_W) {
+    // step one column forward. currently played pattern may not be
+    // the one currently displayed, so take care when drawing those
+    // columns. when wrapping around we always start playing the
+    // displayed pattern.
+    if (++playing->column == GRID_W) {
       if (playing != pc->current) {
-	p->column = -1;
+	playing->column = -1;
 	playing = pc->current;
-	p = pc->current;
+	playing = pc->current;
       }
-      p->column = 0;
+      playing->column = 0;
     }
-    pc->highlightColumn = p->column;
+    pc->highlightColumn = playing->column;
     if (playing != pc->current)
       pc->highlightColumn = -1;
     pc->draw();
 
     // note on according to the grid
     for (int i = 0; i < GRID_H; i ++) {
-      pad = i * GRID_W + p->column;
-      if (p->grid[pad / 8] & (1 << (pad % 8))) {
-	midi->noteOn(p->channel, p->note[i], p->velocity[i]);
-	p->active[i] = p->note[i];
+      pad = i * GRID_W + playing->column;
+      if (playing->grid[pad / 8] & (1 << (pad % 8))) {
+	midi->noteOn(playing->channel, playing->note[i], playing->velocity[i]);
+	playing->active[i] = playing->note[i];
       }
     }
-    p->activeChannel = p->channel;
+    playing->activeChannel = playing->channel;
 
     // schedule next step
     playNext += (240000 / *tempo) / GRID_W;
-    p->swingDelay = 0;
-    if (!(p->column & 1))
-      p->swingDelay = ((float)(p->swing - 50) / 50) * (240000 / *tempo) / GRID_W;
+    playing->swingDelay = 0;
+    if (!(playing->column & 1))
+      playing->swingDelay = (((float)(playing->swing - 50) / 50) *
+			     (240000 / *tempo) / GRID_W);
 
-    return MAX(0, playNext + p->swingDelay - time());
+    return MAX(0, playNext + playing->swingDelay - time());
   }
 };
 
