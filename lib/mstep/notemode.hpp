@@ -13,6 +13,7 @@ public:
   Control *control;
   PatternController *pc;
   int activeRow;
+  int field;
 
   NoteMode(Grid *grid, DisplayWriter *displayWriter, Control *control,
 	   PatternController *pc) {
@@ -23,8 +24,9 @@ public:
   }
 
   void start() {
+    field = 0;
     activeRow = -1;
-    displayWriter->clear()->string("NOTE")->cr();
+    displayWriter->clear()->string("NOTE          >")->cr();
     displayWriter->string("  <select row>")->cr();
   }
 
@@ -34,16 +36,15 @@ public:
   }
 
   unsigned int tick() {
-    bool rowChanged = false;
-    bool noteChanged = false;
+    bool change = false;
     char row, column;
     int mod;
     int value;
 
     while (grid->getPress(&row, &column))
-      rowChanged = true;
+      change = true;
 
-    if (rowChanged) {
+    if (change) {
       pc->highlightRow = row;
       pc->draw();
       this->activeRow = row;
@@ -52,21 +53,36 @@ public:
     if (this->activeRow < 0)
       return 100;
 
-    value = pc->current->note[this->activeRow];
+    if (control->getSelect()) {
+      if (++field > 1)
+	field = 0;
+      change = true;
+    }
 
     mod = control->getMod();
-    if (mod) {
-      value = MIN(127, MAX(0, value + mod));
-      noteChanged = true;
-    }
 
-    if (rowChanged || noteChanged) {
-      displayWriter->clear()->string("NOTE")->cr()->		\
+    if (!change && !mod)
+      return 100;
+
+    displayWriter->clear();
+    switch (field) {
+    case 0:
+      value = pc->current->note[this->activeRow];
+      value = MIN(127, MAX(0, value + mod));
+      pc->current->note[this->activeRow] = value;
+      displayWriter->string("NOTE          >")->cr()->		\
         string("  ")->integer(this->activeRow)->string(": ")->	\
 	note(value)->cr();
+      break;
+    case 1:
+      value = pc->current->velocity[this->activeRow];
+      value = MIN(127, MAX(0, value + mod));
+      pc->current->velocity[this->activeRow] = value;
+      displayWriter->string("VELOCITY      >")->cr()->		\
+        string("  ")->integer(this->activeRow)->string(": ")->	\
+	integer(value)->cr();
+      break;
     }
-
-    pc->current->note[this->activeRow] = value;
 
     return 100;
   }
