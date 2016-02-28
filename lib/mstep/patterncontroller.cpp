@@ -7,37 +7,37 @@ PatternController::PatternController(Grid *grid) {
 
   // defaults
   for (int i = 0; i < GRID_H; i++) {
-    pattern[i].channel = DEFAULT_CHANNEL;
-    pattern[i].column = -1;
-    pattern[i].swing = 50;
+    program.pattern[i].channel = DEFAULT_CHANNEL;
+    program.pattern[i].column = -1;
+    program.pattern[i].swing = 50;
     for (int j = 0; j < GRID_BYTES; j++)
-      pattern[i].grid[j] = 0;
+      program.pattern[i].grid[j] = 0;
     for (int j = 0; j < GRID_H; j++) {
-      pattern[i].note[j] = 36 + j;
-      pattern[i].velocity[j] = 127;
-      pattern[i].active[j] = -1;
+      program.pattern[i].note[j] = 36 + j;
+      program.pattern[i].velocity[j] = 127;
+      program.pattern[i].active[j] = -1;
     }
 
     // hard coded volca notes
     // hack hack hack hack hack
-    pattern[i].note[0] = 36;
-    pattern[i].note[1] = 38;
-    pattern[i].note[2] = 43;
-    pattern[i].note[3] = 50;
-    pattern[i].note[4] = 42;
-    pattern[i].note[5] = 46;
-    pattern[i].note[6] = 39;
+    program.pattern[i].note[0] = 36;
+    program.pattern[i].note[1] = 38;
+    program.pattern[i].note[2] = 43;
+    program.pattern[i].note[3] = 50;
+    program.pattern[i].note[4] = 42;
+    program.pattern[i].note[5] = 46;
+    program.pattern[i].note[6] = 39;
   }
 
   currentIndex = 0;
-  current = &pattern[0];
+  current = &program.pattern[0];
   highlightColumn = -1;
   highlightRow = -1;
 }
 
 void PatternController::change(int steps) {
   currentIndex = MIN(GRID_H - 1, MAX(0, currentIndex + steps));
-  current = &pattern[currentIndex];
+  current = &program.pattern[currentIndex];
   draw();
 }
 

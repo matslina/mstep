@@ -15,10 +15,15 @@ typedef struct pattern_t {
   int swingDelay;
 } pattern_t;
 
+typedef struct program_t {
+  pattern_t pattern[MSTEP_GRID_HEIGHT];
+  char tempo;
+} program_t;
 
 class PatternController {
 public:
   PatternController(Grid *grid);
+  program_t program;
   pattern_t *current;
   int currentIndex;
   char highlightColumn;
@@ -28,7 +33,6 @@ public:
 
 private:
   Grid *grid;
-  pattern_t pattern[GRID_H];
 };
 
 
