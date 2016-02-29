@@ -260,11 +260,27 @@ class AdaDisplay : public Display {
   }
 };
 
+class AdaStorage : public Storage {
+public:
+  int getCapacity() {
+    return 1231;
+  }
+
+  int write(int address, char *src, int n) {
+    return 321;
+  }
+
+  int read(int address, char *dst, int n) {
+    return 0;
+  }
+};
+
+
 AdaGrid grid = AdaGrid();
 AdaControl control = AdaControl();
 AdaDisplay display = AdaDisplay();
 AdaMIDI midi = AdaMIDI();
-
+AdaStorage storage = AdaStorage();
 
 void setup() {
   grid.initialize();
@@ -274,5 +290,5 @@ void setup() {
 }
 
 void loop() {
-  mstep_run(&grid, &control, &display, &midi, &delay, &millis);
+  mstep_run(&grid, &control, &display, &midi, &storage, &delay, &millis);
 }

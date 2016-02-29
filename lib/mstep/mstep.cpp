@@ -6,10 +6,14 @@
 #include "patternmode.hpp"
 #include "notemode.hpp"
 #include "tempomode.hpp"
+#include "storagecontroller.hpp"
+#include "loadmode.hpp"
+#include "savemode.hpp"
 #include "playmode.hpp"
 
 
 void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
+	       Storage *storage,
 	       void (*sleep)(unsigned long),
 	       unsigned long (*time)(void)) {
   char row, column;
@@ -22,10 +26,13 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
 
   DisplayWriter displayWriter = DisplayWriter(display);
   PatternController ppc = PatternController(grid);
+  StorageController storageController = StorageController(storage);
 
   TempoMode tmode = TempoMode(&displayWriter, control, &tempo);
   PatternMode pmode = PatternMode(&displayWriter, control, &ppc);
   NoteMode nmode = NoteMode(grid, &displayWriter, control, &ppc);
+  LoadMode lmode = LoadMode(&displayWriter, control, &storageController, &ppc);
+  SaveMode smode = SaveMode(&displayWriter, control, &storageController, &ppc);
   PlayMode player = PlayMode(midi, sleep, time, &ppc, &tempo);
 
   mode = 0;
@@ -64,13 +71,19 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
     // only process event if it's unambiguous and it isn't garbage
     if (event && !(event & (event - 1)) &&
 	event & (Control::NOTE | Control::TEMPO |
-		 Control::PATTERN)) {
+		 Control::PATTERN | Control::LOAD | Control::SAVE)) {
 
       // with the exception of PLAY, all modes are mutually exclusive,
       // so we stop the current mode
       switch (mode & ~Control::PLAY) {
       case Control::NOTE:
 	nmode.stop();
+	break;
+      case Control::LOAD:
+	lmode.stop();
+	break;
+      case Control::SAVE:
+	smode.stop();
 	break;
       }
 
@@ -85,6 +98,14 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
 	break;
       case Control::PATTERN:
 	pmode.start();
+	break;
+      case Control::LOAD:
+	if (!(mode & Control::PLAY))
+	  lmode.start();
+	break;
+      case Control::SAVE:
+	if (!(mode & Control::PLAY))
+	  smode.start();
 	break;
       default:
 	displayWriter.clear();
@@ -128,6 +149,12 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
       break;
     case Control::PATTERN:
       pmode.tick();
+      break;
+    case Control::LOAD:
+      lmode.tick();
+      break;
+    case Control::SAVE:
+      smode.tick();
       break;
     }
   }

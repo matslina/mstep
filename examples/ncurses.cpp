@@ -13,6 +13,8 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
+#define STORAGE_PATH "mstep_ncurses_storage.dat"
+
 using namespace std;
 
 class CursesGrid : public Grid {
@@ -229,10 +231,10 @@ public:
 };
 
 static const char *COMMAND[] = {"Play", "Note", "Tempo", "pAttern",
-				"cOpy", "paSte", "cleaR",
-				"Quit"};
+				"cOpy", "paSte", "cleaR", "Load",
+				"saVe", "Quit"};
 static const char COMMANDCHAR[] = {'P', 'N', 'T', 'A', 'O',
-				   'S', 'R'};
+				   'S', 'R', 'L', 'V'};
 
 class CursesControl : public Control {
 public:
@@ -322,6 +324,44 @@ private:
   }
 };
 
+class CursesStorage : public Storage {
+public:
+
+  int getCapacity() {
+    return 2000;
+  }
+
+  void init() {
+    FILE *f;
+    int needed;
+    char zero[256];
+
+    f = fopen(STORAGE_PATH, "a");
+    memset(zero, 0, sizeof(zero));
+    for (needed = getCapacity() - ftell(f);
+	 needed > 0;
+	 needed -= sizeof(zero))
+      fwrite(zero, 1, MIN(needed, sizeof(zero)), f);
+    fclose(f);
+  }
+
+  int write(int address, char *src, int n) {
+    FILE *fd = fopen(STORAGE_PATH, "r+");
+    fseek(fd, address, SEEK_SET);
+    fwrite(src, 1, MIN(n, MAX(0, 2000 - address)), fd);
+    fclose(fd);
+    return MIN(n, 2000);
+  }
+
+  int read(int address, char *dst, int n) {
+    FILE *fd = fopen(STORAGE_PATH, "r");
+    fseek(fd, address, SEEK_SET);
+    fread(dst, 1, MIN(n, MAX(0, 2000 - address)), fd);
+    fclose(fd);
+    return MIN(n, 2000);
+  }
+};
+
 
 void endwindows(void) {
   endwin();
@@ -354,12 +394,13 @@ struct mstep_args {
   CursesMIDI *midi;
   CursesDisplay *display;
   CursesControl *control;
+  CursesStorage *storage;
 };
 
 void *mstep_run_thread(void *args) {
   struct mstep_args *margs = (struct mstep_args *)args;
   mstep_run(margs->grid, margs->control, margs->display, margs->midi,
-	    sleepms, timems);
+	    margs->storage, sleepms, timems);
 }
 
 int uiloop(int grid_rows, int grid_columns) {
@@ -367,6 +408,7 @@ int uiloop(int grid_rows, int grid_columns) {
   CursesMIDI *midi;
   CursesDisplay *display;
   CursesControl *control;
+  CursesStorage *storage;
   pthread_t thread_mstep;
   pthread_mutex_t mutex_curses;
   int pos;
@@ -387,8 +429,10 @@ int uiloop(int grid_rows, int grid_columns) {
 			grid_rows, grid_columns);
   control = new CursesControl(&mutex_curses, display->width + 1, 1, display->height);
   midi = new CursesMIDI(&mutex_curses, 1, display->height + grid->height + 1, 10);
+  storage = new CursesStorage();
+  storage->init();
 
-  struct mstep_args args = {grid, midi, display, control};
+  struct mstep_args args = {grid, midi, display, control, storage};
   pthread_create(&thread_mstep, NULL, mstep_run_thread, &args);
 
   while (1) {
