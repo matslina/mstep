@@ -29,14 +29,11 @@ public:
       string(storage->numEntries > 0 ? "  <select>" : "   <empty>")->cr();
   }
 
-  void stop() {
-  }
-
-  unsigned int tick() {
+  bool tick() {
     int mod;
 
     if (storage->numEntries <= 0)
-      return 0;
+      return true;;
 
     if (control->getSelect() && slot >= 0) {
       storage->loadProgram(slot, &pc->program);
@@ -44,15 +41,17 @@ public:
       displayWriter->clear()->string("SLOT ")->integer(slot)->	\
 	string(" LOADED")->cr();
 
-      return 1231;
+      return false;
     }
 
     mod = control->getMod();
     if (!mod)
-      return 123123;
+      return true;
 
     slot = MAX(0, MIN(storage->numEntries - 1, slot + mod));
     displayWriter->clear()->namedInteger("LOAD SLOT", slot);
+
+    return true;
   }
 };
 

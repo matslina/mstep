@@ -5,7 +5,7 @@
 #include "mstep.hpp"
 #include "patterncontroller.hpp"
 
-class PlayMode : Mode {
+class PlayMode {
 public:
   MIDI *midi;
   PatternController *pc;

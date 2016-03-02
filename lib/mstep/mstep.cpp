@@ -151,10 +151,18 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
       pmode.tick();
       break;
     case Control::LOAD:
-      lmode.tick();
+      if(!lmode.tick()) {
+	mode ^= Control::LOAD;
+	lmode.stop();
+	control->indicate(mode);
+      }
       break;
     case Control::SAVE:
-      smode.tick();
+      if(!smode.tick()) {
+	mode ^= Control::SAVE;
+	smode.stop();
+	control->indicate(mode);
+      }
       break;
     }
   }

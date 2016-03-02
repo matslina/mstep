@@ -24,10 +24,7 @@ public:
     displayWriter->clear()->namedInteger("PATTERN       >", pc->currentIndex);
   }
 
-  void stop() {
-  }
-
-  unsigned int tick() {
+  bool tick() {
     int mod;
     bool displayAnyway = false;
 
@@ -39,7 +36,7 @@ public:
 
     mod = control->getMod();
     if (!mod && !displayAnyway)
-      return 100;
+      return true;
 
     displayWriter->clear();
     switch (field) {
@@ -57,7 +54,7 @@ public:
       break;
     }
 
-    return 100;
+    return true;
   }
 
 };

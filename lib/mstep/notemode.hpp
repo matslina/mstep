@@ -35,7 +35,7 @@ public:
     pc->draw();
   }
 
-  unsigned int tick() {
+  bool tick() {
     bool change = false;
     char row, column;
     int mod;
@@ -51,7 +51,7 @@ public:
     }
 
     if (this->activeRow < 0)
-      return 100;
+      return true;
 
     if (control->getSelect()) {
       if (++field > 1)
@@ -62,7 +62,7 @@ public:
     mod = control->getMod();
 
     if (!change && !mod)
-      return 100;
+      return true;
 
     displayWriter->clear();
     switch (field) {
@@ -84,7 +84,7 @@ public:
       break;
     }
 
-    return 100;
+    return true;
   }
 };
 

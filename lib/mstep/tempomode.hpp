@@ -21,18 +21,17 @@ public:
     displayWriter->clear()->namedInteger("TEMPO", *tempo);
   }
 
-  void stop() {
-  }
-
-  unsigned int tick() {
+  bool tick() {
     int mod;
 
     mod = control->getMod();
     if (!mod)
-      return 123123;
+      return true;
 
     *tempo = MIN(240, MAX(1, *tempo + mod));
     displayWriter->clear()->namedInteger("TEMPO", *tempo);
+
+    return true;
   }
 };
 

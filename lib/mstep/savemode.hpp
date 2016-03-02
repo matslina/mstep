@@ -29,28 +29,27 @@ public:
       string("  <select slot>")->cr();
   }
 
-  void stop() {
-  }
-
-  unsigned int tick() {
+  bool tick() {
     int mod;
 
     if (control->getSelect() && slot >= 0) {
       storage->saveProgram(slot, &pc->program);
       displayWriter->clear()->string("SAVE")->cr()->\
 	string("  SLOT ")->integer(slot)->string(" SAVED")->cr();
-      return 1231;
+      return false;
     }
 
     mod = control->getMod();
     if (!mod)
-      return 123123;
+      return true;
 
     slot = MIN(storage->numSlots - 1, MIN(storage->numEntries, MAX(0, slot + mod)));
     displayWriter->clear()->string("SAVE")->cr()->string("  ")->integer(slot);
     if (slot == storage->numEntries)
       displayWriter->string(" (new)");
     displayWriter->cr();
+
+    return true;
   }
 };
 
