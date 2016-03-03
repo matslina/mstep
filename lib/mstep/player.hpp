@@ -5,7 +5,7 @@
 #include "mstep.hpp"
 #include "patterncontroller.hpp"
 
-class PlayMode {
+class Player {
 public:
   MIDI *midi;
   PatternController *pc;
@@ -15,11 +15,11 @@ public:
   pattern_t *playing;
   unsigned long int playNext;
 
-  PlayMode(MIDI *midi,
-	   void (*sleep)(unsigned long),
-	   unsigned long (*time)(void),
-	   PatternController *pc,
-	   int *tempo) {
+  Player(MIDI *midi,
+	 void (*sleep)(unsigned long),
+	 unsigned long (*time)(void),
+	 PatternController *pc,
+	 int *tempo) {
     this->midi = midi;
     this->pc = pc;
     this->sleep = sleep;

@@ -9,7 +9,7 @@
 #include "storagecontroller.hpp"
 #include "loadmode.hpp"
 #include "savemode.hpp"
-#include "playmode.hpp"
+#include "player.hpp"
 
 
 void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
@@ -33,7 +33,7 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
   NoteMode nmode = NoteMode(grid, &displayWriter, control, &ppc);
   LoadMode lmode = LoadMode(&displayWriter, control, &storageController, &ppc);
   SaveMode smode = SaveMode(&displayWriter, control, &storageController, &ppc);
-  PlayMode player = PlayMode(midi, sleep, time, &ppc, &tempo);
+  Player player = Player(midi, sleep, time, &ppc, &tempo);
 
   mode = 0;
   control->indicate(mode);
