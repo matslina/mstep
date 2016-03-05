@@ -6,7 +6,7 @@
 #include "displaywriter.hpp"
 #include "patterncontroller.hpp"
 
-class NoteMode : Mode {
+class NoteMode : public Mode {
 public:
   Grid *grid;
   DisplayWriter *displayWriter;

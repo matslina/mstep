@@ -6,7 +6,7 @@
 #include "displaywriter.hpp"
 #include "patterncontroller.hpp"
 
-class PatternMode : Mode {
+class PatternMode : public Mode {
 public:
   int field;
   DisplayWriter *displayWriter;

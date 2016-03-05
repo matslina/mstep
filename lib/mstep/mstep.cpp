@@ -34,8 +34,10 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
   LoadMode lmode = LoadMode(&displayWriter, control, &storageController, &ppc);
   SaveMode smode = SaveMode(&displayWriter, control, &storageController, &ppc);
   Player player = Player(midi, sleep, time, &ppc, &tempo);
+  Mode *currentMode;
 
   mode = 0;
+  currentMode = 0;
   control->indicate(mode);
   ppc.draw();
   while (grid->getPress(&row, &column));
@@ -75,42 +77,38 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
 
       // with the exception of PLAY, all modes are mutually exclusive,
       // so we stop the current mode
-      switch (mode & ~Control::PLAY) {
-      case Control::NOTE:
-	nmode.stop();
-	break;
-      case Control::LOAD:
-	lmode.stop();
-	break;
-      case Control::SAVE:
-	smode.stop();
-	break;
+      if (currentMode) {
+	currentMode->stop();
+	currentMode = 0;
       }
 
       // start the requested mode, unless it was just stopped in which
       // case we bring back the default display
       switch (event & ~mode) {
       case Control::NOTE:
-	nmode.start();
+	currentMode = &nmode;
 	break;
       case Control::TEMPO:
-	tmode.start();
+	currentMode = &tmode;
 	break;
       case Control::PATTERN:
-	pmode.start();
+	currentMode = &pmode;
 	break;
       case Control::LOAD:
 	if (!(mode & Control::PLAY))
-	  lmode.start();
+	  currentMode = &lmode;
 	break;
       case Control::SAVE:
 	if (!(mode & Control::PLAY))
-	  smode.start();
+	  currentMode = &smode;
 	break;
       default:
 	displayWriter.clear();
 	break;
       }
+
+      if (currentMode)
+	currentMode->start();
 
       mode = (mode & Control::PLAY) | (event & ~mode);
       control->indicate(mode);
@@ -140,30 +138,12 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
     }
 
     // tick() according to mode
-    switch (mode & ~Control::PLAY) {
-    case Control::NOTE:
-      nmode.tick();
-      break;
-    case Control::TEMPO:
-      tmode.tick();
-      break;
-    case Control::PATTERN:
-      pmode.tick();
-      break;
-    case Control::LOAD:
-      if(!lmode.tick()) {
-	mode ^= Control::LOAD;
-	lmode.stop();
+    if (currentMode) {
+      if (!currentMode->tick()) {
+	currentMode->stop();
+	mode &= Control::PLAY;
 	control->indicate(mode);
       }
-      break;
-    case Control::SAVE:
-      if(!smode.tick()) {
-	mode ^= Control::SAVE;
-	smode.stop();
-	control->indicate(mode);
-      }
-      break;
     }
   }
 }

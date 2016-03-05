@@ -4,8 +4,8 @@
 
 class Mode {
 public:
-  void start() {}
-  void stop() {}
+  virtual void start() {}
+  virtual void stop() {}
   virtual bool tick() = 0;
 };
 

@@ -5,7 +5,7 @@
 #include "mstep.hpp"
 #include "displaywriter.hpp"
 
-class TempoMode : Mode {
+class TempoMode : public Mode {
 public:
   DisplayWriter *displayWriter;
   Control *control;
