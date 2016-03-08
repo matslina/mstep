@@ -5,6 +5,13 @@
 #include "mstep.hpp"
 #include "patterncontroller.hpp"
 
+struct pattern_state {
+  char activeNote[GRID_H];
+  char activeChannel;
+  char column;
+  int swingDelay;
+};
+
 class Player {
 public:
   MIDI *midi;
@@ -14,6 +21,8 @@ public:
   int *tempo;
   pattern_t *playing;
   unsigned long int playNext;
+  struct pattern_state allState[GRID_H];
+  struct pattern_state *state;
 
   Player(MIDI *midi,
 	 void (*sleep)(unsigned long),
@@ -25,27 +34,34 @@ public:
     this->sleep = sleep;
     this->time = time;
     this->tempo = tempo;
+
+    for (int i = 0; i < GRID_H; i++) {
+      for (int j = 0; j < GRID_H; j++)
+	allState[i].activeNote[j] = -1;
+      allState[i].column = -1;
+    }
   }
 
   void start() {
     playing = pc->current;
-    playing->swingDelay = 0;
+    state = &allState[pc->currentIndex];
+    state->swingDelay = 0;
     playNext = time();
   }
 
   void stop() {
     // send note off for notes currently on
     for (int i = 0; i < GRID_H; i ++) {
-      if (playing->active[i] >= 0) {
-	midi->noteOn(playing->channel, playing->active[i], 0);
-	playing->active[i] = -1;
+      if (state->activeNote[i] >= 0) {
+	midi->noteOn(playing->channel, state->activeNote[i], 0);
+	state->activeNote[i] = -1;
       }
     }
 
     // and clear the grid
     pc->highlightColumn = -1;
     pc->draw();
-    playing->column = -1;
+    state->column = -1;
   }
 
   unsigned int tick() {
@@ -54,15 +70,15 @@ public:
     unsigned long int when;
 
     now = time();
-    when = playNext + playing->swingDelay;
+    when = playNext + state->swingDelay;
     if (when > now)
       return when - now;
 
     // note off for currently playing notes
     for (int i = 0; i < GRID_H; i ++) {
-      if (playing->active[i] >= 0) {
-	midi->noteOn(playing->activeChannel, playing->active[i], 0);
-	playing->active[i] = -1;
+      if (state->activeNote[i] >= 0) {
+	midi->noteOn(state->activeChannel, state->activeNote[i], 0);
+	state->activeNote[i] = -1;
       }
     }
 
@@ -70,37 +86,37 @@ public:
     // the one currently displayed, so take care when drawing those
     // columns. when wrapping around we always start playing the
     // displayed pattern.
-    if (++playing->column == GRID_W) {
+    if (++state->column == GRID_W) {
       if (playing != pc->current) {
-	playing->column = -1;
+	state->column = -1;
 	playing = pc->current;
-	playing = pc->current;
+	state = &allState[pc->currentIndex];
       }
-      playing->column = 0;
+      state->column = 0;
     }
-    pc->highlightColumn = playing->column;
+    pc->highlightColumn = state->column;
     if (playing != pc->current)
       pc->highlightColumn = -1;
     pc->draw();
 
     // note on according to the grid
     for (int i = 0; i < GRID_H; i ++) {
-      pad = i * GRID_W + playing->column;
+      pad = i * GRID_W + state->column;
       if (playing->grid[pad / 8] & (1 << (pad % 8))) {
 	midi->noteOn(playing->channel, playing->note[i], playing->velocity[i]);
-	playing->active[i] = playing->note[i];
+	state->activeNote[i] = playing->note[i];
       }
     }
-    playing->activeChannel = playing->channel;
+    state->activeChannel = playing->channel;
 
     // schedule next step
     playNext += (240000 / *tempo) / GRID_W;
-    playing->swingDelay = 0;
-    if (!(playing->column & 1))
-      playing->swingDelay = (((float)(playing->swing - 50) / 50) *
-			     (240000 / *tempo) / GRID_W);
+    state->swingDelay = 0;
+    if (!(state->column & 1))
+      state->swingDelay = (((float)(playing->swing - 50) / 50) *
+				  (240000 / *tempo) / GRID_W);
 
-    return MAX(0, playNext + playing->swingDelay - time());
+    return MAX(0, playNext + state->swingDelay - time());
   }
 };
 

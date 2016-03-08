@@ -8,14 +8,12 @@ PatternController::PatternController(Grid *grid) {
   // defaults
   for (int i = 0; i < GRID_H; i++) {
     program.pattern[i].channel = DEFAULT_CHANNEL;
-    program.pattern[i].column = -1;
     program.pattern[i].swing = 50;
     for (int j = 0; j < GRID_BYTES; j++)
       program.pattern[i].grid[j] = 0;
     for (int j = 0; j < GRID_H; j++) {
       program.pattern[i].note[j] = 36 + j;
       program.pattern[i].velocity[j] = 127;
-      program.pattern[i].active[j] = -1;
     }
 
     // hard coded volca notes
