@@ -53,7 +53,7 @@ public:
     // send note off for notes currently on
     for (int i = 0; i < GRID_H; i ++) {
       if (state->activeNote[i] >= 0) {
-	midi->noteOn(pattern->channel, state->activeNote[i], 0);
+	midi->noteOn(state->activeChannel, state->activeNote[i], 0);
 	state->activeNote[i] = -1;
       }
     }
