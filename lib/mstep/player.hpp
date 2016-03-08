@@ -19,8 +19,8 @@ public:
   void (*sleep)(unsigned long);
   unsigned long (*time)(void);
   int *tempo;
-  pattern_t *playing;
-  unsigned long int playNext;
+  pattern_t *pattern;
+  unsigned long int nextEventTime;
   struct pattern_state allState[GRID_H];
   struct pattern_state *state;
 
@@ -43,17 +43,17 @@ public:
   }
 
   void start() {
-    playing = pc->current;
+    pattern = pc->current;
     state = &allState[pc->currentIndex];
     state->swingDelay = 0;
-    playNext = time();
+    nextEventTime = time();
   }
 
   void stop() {
     // send note off for notes currently on
     for (int i = 0; i < GRID_H; i ++) {
       if (state->activeNote[i] >= 0) {
-	midi->noteOn(playing->channel, state->activeNote[i], 0);
+	midi->noteOn(pattern->channel, state->activeNote[i], 0);
 	state->activeNote[i] = -1;
       }
     }
@@ -70,7 +70,7 @@ public:
     unsigned long int when;
 
     now = time();
-    when = playNext + state->swingDelay;
+    when = nextEventTime + state->swingDelay;
     if (when > now)
       return when - now;
 
@@ -87,36 +87,36 @@ public:
     // columns. when wrapping around we always start playing the
     // displayed pattern.
     if (++state->column == GRID_W) {
-      if (playing != pc->current) {
+      if (pattern != pc->current) {
 	state->column = -1;
-	playing = pc->current;
+	pattern = pc->current;
 	state = &allState[pc->currentIndex];
       }
       state->column = 0;
     }
     pc->highlightColumn = state->column;
-    if (playing != pc->current)
+    if (pattern != pc->current)
       pc->highlightColumn = -1;
     pc->draw();
 
     // note on according to the grid
     for (int i = 0; i < GRID_H; i ++) {
       pad = i * GRID_W + state->column;
-      if (playing->grid[pad / 8] & (1 << (pad % 8))) {
-	midi->noteOn(playing->channel, playing->note[i], playing->velocity[i]);
-	state->activeNote[i] = playing->note[i];
+      if (pattern->grid[pad / 8] & (1 << (pad % 8))) {
+	midi->noteOn(pattern->channel, pattern->note[i], pattern->velocity[i]);
+	state->activeNote[i] = pattern->note[i];
       }
     }
-    state->activeChannel = playing->channel;
+    state->activeChannel = pattern->channel;
 
     // schedule next step
-    playNext += (240000 / *tempo) / GRID_W;
+    nextEventTime += (240000 / *tempo) / GRID_W;
     state->swingDelay = 0;
     if (!(state->column & 1))
-      state->swingDelay = (((float)(playing->swing - 50) / 50) *
-				  (240000 / *tempo) / GRID_W);
+      state->swingDelay = (((float)(pattern->swing - 50) / 50) *
+			   (240000 / *tempo) / GRID_W);
 
-    return MAX(0, playNext + state->swingDelay - time());
+    return MAX(0, nextEventTime + state->swingDelay - time());
   }
 };
 
