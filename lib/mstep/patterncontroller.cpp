@@ -26,6 +26,7 @@ PatternController::PatternController(Grid *grid) {
     program.pattern[i].note[5] = 46;
     program.pattern[i].note[6] = 39;
   }
+  program.tempo = DEFAULT_TEMPO;
 
   currentIndex = 0;
   current = &program.pattern[0];

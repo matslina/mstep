@@ -13,7 +13,7 @@ typedef struct pattern_t {
 
 typedef struct program_t {
   pattern_t pattern[MSTEP_GRID_HEIGHT];
-  char tempo;
+  unsigned char tempo;
 } program_t;
 
 class PatternController {

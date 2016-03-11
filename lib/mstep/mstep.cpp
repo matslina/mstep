@@ -28,12 +28,12 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
   PatternController ppc = PatternController(grid);
   StorageController storageController = StorageController(storage);
 
-  TempoMode tmode = TempoMode(&displayWriter, control, &tempo);
+  TempoMode tmode = TempoMode(&displayWriter, control, &ppc);
   PatternMode pmode = PatternMode(&displayWriter, control, &ppc);
   NoteMode nmode = NoteMode(grid, &displayWriter, control, &ppc);
   LoadMode lmode = LoadMode(&displayWriter, control, &storageController, &ppc);
   SaveMode smode = SaveMode(&displayWriter, control, &storageController, &ppc);
-  Player player = Player(midi, sleep, time, &ppc, &tempo);
+  Player player = Player(midi, sleep, time, &ppc);
   Mode *currentMode;
 
   mode = 0;

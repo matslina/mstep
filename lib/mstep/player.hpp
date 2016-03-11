@@ -18,7 +18,6 @@ public:
   PatternController *pc;
   void (*sleep)(unsigned long);
   unsigned long (*time)(void);
-  int *tempo;
   pattern_t *pattern;
   unsigned long int nextEventTime;
   struct pattern_state allState[GRID_H];
@@ -27,13 +26,11 @@ public:
   Player(MIDI *midi,
 	 void (*sleep)(unsigned long),
 	 unsigned long (*time)(void),
-	 PatternController *pc,
-	 int *tempo) {
+	 PatternController *pc) {
     this->midi = midi;
     this->pc = pc;
     this->sleep = sleep;
     this->time = time;
-    this->tempo = tempo;
 
     for (int i = 0; i < GRID_H; i++) {
       for (int j = 0; j < GRID_H; j++)
@@ -110,11 +107,11 @@ public:
     state->activeChannel = pattern->channel;
 
     // schedule next step
-    nextEventTime += (240000 / *tempo) / GRID_W;
+    nextEventTime += (240000 / pc->program.tempo) / GRID_W;
     state->swingDelay = 0;
     if (!(state->column & 1))
       state->swingDelay = (((float)(pattern->swing - 50) / 50) *
-			   (240000 / *tempo) / GRID_W);
+			   (240000 / pc->program.tempo) / GRID_W);
 
     return MAX(0, nextEventTime + state->swingDelay - time());
   }

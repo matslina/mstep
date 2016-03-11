@@ -4,21 +4,22 @@
 #include "mode.hpp"
 #include "mstep.hpp"
 #include "displaywriter.hpp"
+#include "patterncontroller.hpp"
 
 class TempoMode : public Mode {
 public:
   DisplayWriter *displayWriter;
   Control *control;
-  int *tempo;
+  PatternController *pc;
 
-  TempoMode(DisplayWriter *displayWriter, Control *control, int *tempo) {
+  TempoMode(DisplayWriter *displayWriter, Control *control, PatternController *pc) {
     this->displayWriter = displayWriter;
     this->control = control;
-    this->tempo = tempo;
+    this->pc = pc;
   }
 
   void start() {
-    displayWriter->clear()->namedInteger("TEMPO", *tempo);
+    displayWriter->clear()->namedInteger("TEMPO", pc->program.tempo);
   }
 
   bool tick() {
@@ -28,8 +29,8 @@ public:
     if (!mod)
       return true;
 
-    *tempo = MIN(240, MAX(1, *tempo + mod));
-    displayWriter->clear()->namedInteger("TEMPO", *tempo);
+    pc->program.tempo = MIN(240, MAX(1, pc->program.tempo + mod));
+    displayWriter->clear()->namedInteger("TEMPO", pc->program.tempo);
 
     return true;
   }
