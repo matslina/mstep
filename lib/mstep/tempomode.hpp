@@ -7,11 +7,12 @@
 #include "patterncontroller.hpp"
 
 class TempoMode : public Mode {
-public:
+private:
   DisplayWriter *displayWriter;
   Control *control;
   PatternController *pc;
 
+public:
   TempoMode(DisplayWriter *displayWriter, Control *control, PatternController *pc) {
     this->displayWriter = displayWriter;
     this->control = control;

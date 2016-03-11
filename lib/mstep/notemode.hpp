@@ -7,7 +7,7 @@
 #include "patterncontroller.hpp"
 
 class NoteMode : public Mode {
-public:
+private:
   Grid *grid;
   DisplayWriter *displayWriter;
   Control *control;
@@ -15,6 +15,7 @@ public:
   int activeRow;
   int field;
 
+public:
   NoteMode(Grid *grid, DisplayWriter *displayWriter, Control *control,
 	   PatternController *pc) {
     this->grid = grid;

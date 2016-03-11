@@ -17,6 +17,9 @@ typedef struct program_t {
 } program_t;
 
 class PatternController {
+private:
+  Grid *grid;
+
 public:
   PatternController(Grid *grid);
   program_t program;
@@ -26,9 +29,6 @@ public:
   char highlightRow;
   void change(int steps);
   void draw();
-
-private:
-  Grid *grid;
 };
 
 

@@ -8,13 +8,14 @@
 #include "storagecontroller.hpp"
 
 class SaveMode : public Mode {
-public:
+private:
   DisplayWriter *displayWriter;
   Control *control;
   StorageController *storage;
   PatternController *pc;
   int slot;
 
+public:
   SaveMode(DisplayWriter *displayWriter, Control *control,
 	   StorageController *storage, PatternController *pc) {
     this->displayWriter = displayWriter;

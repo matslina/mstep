@@ -12,6 +12,9 @@ struct storage_header {
 };
 
 class StorageController {
+private:
+  Storage *storage;
+
 public:
   int numEntries;
   int numSlots;
@@ -63,9 +66,6 @@ public:
 
     return true;
   }
-
-private:
-  Storage *storage;
 };
 
 #endif

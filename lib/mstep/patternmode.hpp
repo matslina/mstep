@@ -7,12 +7,13 @@
 #include "patterncontroller.hpp"
 
 class PatternMode : public Mode {
-public:
+private:
   int field;
   DisplayWriter *displayWriter;
   Control *control;
   PatternController *pc;
 
+public:
   PatternMode(DisplayWriter *displayWriter, Control *control, PatternController *pc) {
     this->displayWriter = displayWriter;
     this->control = control;

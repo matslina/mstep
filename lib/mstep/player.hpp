@@ -13,7 +13,7 @@ struct pattern_state {
 };
 
 class Player {
-public:
+private:
   MIDI *midi;
   PatternController *pc;
   void (*sleep)(unsigned long);
@@ -23,6 +23,7 @@ public:
   struct pattern_state allState[GRID_H];
   struct pattern_state *state;
 
+public:
   Player(MIDI *midi,
 	 void (*sleep)(unsigned long),
 	 unsigned long (*time)(void),

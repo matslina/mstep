@@ -7,6 +7,12 @@ static const char *notes[] = {"C", "C#", "D", "D#", "E", "F",
 			      "F#", "G", "G#", "A", "A#", "B"};
 
 class DisplayWriter {
+private:
+  char row;
+  int length;
+  Display *display;
+  char buf[20];
+
 public:
   DisplayWriter(Display *display);
   DisplayWriter *clear();
@@ -15,11 +21,6 @@ public:
   DisplayWriter *note(unsigned char value);
   DisplayWriter *cr();
   DisplayWriter *namedInteger(const char *name, unsigned char i);
-  Display *display;
-  char buf[20];
-private:
-  char row;
-  int length;
 };
 
 DisplayWriter::DisplayWriter(Display *display) {
