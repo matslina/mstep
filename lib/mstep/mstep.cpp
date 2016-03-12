@@ -16,8 +16,6 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
 	       Storage *storage,
 	       void (*sleep)(unsigned long),
 	       unsigned long (*time)(void)) {
-  char row, column;
-  int pad;
   int event;
   int mode;
   int sleepDuration;
@@ -40,7 +38,6 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
   currentMode = 0;
   control->indicate(mode);
   ppc.draw();
-  while (grid->getPress(&row, &column));
   displayWriter.clear()->string("MStep 4711")->cr()->string("  ready")->cr();
 
   while (1) {
@@ -130,8 +127,9 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
 
     // unless in note mode, grid press updates grid state
     if (!(mode & Control::NOTE)) {
+      char row, column;
       while (grid->getPress(&row, &column)) {
-	pad = row * GRID_W + column;
+	char pad = row * GRID_W + column;
 	ppc.current->grid[pad >> 3] ^= 1 << (pad & 0x7);
 	ppc.draw();
       }
