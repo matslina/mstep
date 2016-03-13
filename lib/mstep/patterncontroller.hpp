@@ -27,8 +27,11 @@ public:
   int currentIndex;
   char highlightColumn;
   char highlightRow;
-  void change(int steps);
   void draw();
+  char modPattern(char delta);
+  char modTempo(char delta);
+  char modSwing(char delta);
+  char modChannel(char delta);
 };
 
 

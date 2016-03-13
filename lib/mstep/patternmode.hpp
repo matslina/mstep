@@ -6,58 +6,27 @@
 #include "displaywriter.hpp"
 #include "patterncontroller.hpp"
 
-class PatternMode : public Mode {
-private:
-  int field;
-  DisplayWriter *displayWriter;
-  Control *control;
-  PatternController *pc;
+static const char *pmodeFieldName[] = \
+  {"PATTERN",
+   "SWING",
+   "CHANNEL"};
 
+static char (PatternController::*pmodeFieldFun[])(char) = \
+  {&PatternController::modPattern,
+   &PatternController::modSwing,
+   &PatternController::modChannel};
+
+
+class PatternMode : public MultiFieldMode {
 public:
   PatternMode(DisplayWriter *displayWriter, Control *control, PatternController *pc) {
     this->displayWriter = displayWriter;
     this->control = control;
-    this->pc = pc;
+    this->patternController = pc;
+    numFields = 3;
+    fieldName = pmodeFieldName;
+    fieldFun = pmodeFieldFun;
   }
-
-  void start() {
-    field = 0;
-    displayWriter->clear()->namedInteger("PATTERN       >", pc->currentIndex);
-  }
-
-  bool tick() {
-    int mod;
-    bool displayAnyway = false;
-
-    if (control->getSelect()) {
-      if (++field > 2)
-	field = 0;
-      displayAnyway = true;
-    }
-
-    mod = control->getMod();
-    if (!mod && !displayAnyway)
-      return true;
-
-    displayWriter->clear();
-    switch (field) {
-    case 0:
-      pc->change(mod);
-      displayWriter->namedInteger("PATTERN       >", pc->currentIndex);
-      break;
-    case 1:
-      pc->current->swing = MIN(75, MAX(50, pc->current->swing + mod));
-      displayWriter->namedInteger("SWING         >", pc->current->swing);
-      break;
-    case 2:
-      pc->current->channel = MIN(16, MAX(1, pc->current->channel + mod));
-      displayWriter->namedInteger("CHANNEL       >", pc->current->channel);
-      break;
-    }
-
-    return true;
-  }
-
 };
 
 #endif

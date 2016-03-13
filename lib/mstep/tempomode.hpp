@@ -6,34 +6,23 @@
 #include "displaywriter.hpp"
 #include "patterncontroller.hpp"
 
-class TempoMode : public Mode {
-private:
-  DisplayWriter *displayWriter;
-  Control *control;
-  PatternController *pc;
 
+static const char *tmodeFieldName[] = \
+  {"TEMPO"};
+
+static char (PatternController::*tmodeFieldFun[])(char) = \
+  {&PatternController::modTempo};
+
+
+class TempoMode : public MultiFieldMode {
 public:
   TempoMode(DisplayWriter *displayWriter, Control *control, PatternController *pc) {
     this->displayWriter = displayWriter;
     this->control = control;
-    this->pc = pc;
-  }
-
-  void start() {
-    displayWriter->clear()->namedInteger("TEMPO", pc->program.tempo);
-  }
-
-  bool tick() {
-    int mod;
-
-    mod = control->getMod();
-    if (!mod)
-      return true;
-
-    pc->program.tempo = MIN(240, MAX(1, pc->program.tempo + mod));
-    displayWriter->clear()->namedInteger("TEMPO", pc->program.tempo);
-
-    return true;
+    this->patternController = pc;
+    numFields = 1;
+    fieldName = tmodeFieldName;
+    fieldFun = tmodeFieldFun;
   }
 };
 

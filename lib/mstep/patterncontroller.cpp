@@ -34,10 +34,11 @@ PatternController::PatternController(Grid *grid) {
   highlightRow = -1;
 }
 
-void PatternController::change(int steps) {
-  currentIndex = MIN(GRID_H - 1, MAX(0, currentIndex + steps));
+char PatternController::modPattern(char delta) {
+  currentIndex = MIN(GRID_H - 1, MAX(0, currentIndex + delta));
   current = &program.pattern[currentIndex];
   draw();
+  return currentIndex;
 }
 
 void PatternController::draw() {
@@ -56,4 +57,19 @@ void PatternController::draw() {
   if (highlightRow >= 0)
     for (int i = highlightRow * GRID_W; i < (highlightRow + 1) * GRID_W; i++)
       current->grid[i >> 3] ^= 1 << (i & 7);
+}
+
+char PatternController::modTempo(char delta) {
+  program.tempo = MIN(240, MAX(0, program.tempo + delta));
+  return program.tempo;
+}
+
+char PatternController::modSwing(char delta) {
+  current->swing = MIN(75, MAX(50, current->swing + delta));
+  return current->swing;
+}
+
+char PatternController::modChannel(char delta) {
+  current->channel = MIN(16, MAX(1, current->channel + delta));
+  return current->channel;
 }
