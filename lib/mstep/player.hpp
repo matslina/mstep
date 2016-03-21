@@ -58,24 +58,20 @@ public:
     this->sleep = sleep;
     this->time = time;
 
-    for (int i = 0; i < GRID_H; i++) {
+    for (int i = 0; i < GRID_H; i++)
       for (int j = 0; j < GRID_H; j++)
 	allState[i].activeNote[j] = -1;
-      allState[i].column = -1;
-    }
   }
 
   void start() {
     playIndex = pc->currentIndex;
     allState[playIndex].swingDelay = 0;
-    allState[playIndex].column = -1;
+    allState[playIndex].column = 0;
     nextEventTime = time();
   }
 
   void stop() {
     noteOff(playIndex);
-
-    // and clear the grid
     pc->highlightColumn = -1;
     pc->draw();
   }
@@ -92,29 +88,31 @@ public:
     if (when > now)
       return when - now;
 
-    // note off for currently playing notes
+    // send MIDI messages before doing anything else.
     noteOff(playIndex);
+    noteOn(playIndex);
 
-    // step one column forward. currently played pattern may not be
-    // the one currently displayed, so take care when drawing those
-    // columns. when wrapping around we always start playing the
-    // displayed pattern.
+    // if playing pattern is currently displayed: update the
+    // highlighted column.
+    pc->highlightColumn = -1;
+    if (playIndex == pc->currentIndex)
+      pc->highlightColumn = state->column;
+    pc->draw();
+
+    // step one column forward. if wrapping around, start playing the
+    // currently displayed pattern and bring along data so currently
+    // playing notes are turned off properly.
     if (++state->column == GRID_W) {
-      if (pattern != pc->current) {
-	state->column = -1;
-	pattern = pc->current;
+      if (playIndex != pc->currentIndex) {
 	playIndex = pc->currentIndex;
-	state = &allState[pc->currentIndex];
+	pattern = &pc->program.pattern[playIndex];
+	for (int i = 0; i < GRID_H; i++)
+	  allState[playIndex].activeNote[i] = state->activeNote[i];
+	allState[playIndex].activeChannel = state->activeChannel;
+	state = &allState[playIndex];
       }
       state->column = 0;
     }
-    pc->highlightColumn = state->column;
-    if (pattern != pc->current)
-      pc->highlightColumn = -1;
-    pc->draw();
-
-    // note on according to the grid
-    noteOn(playIndex);
 
     // schedule next step
     nextEventTime += (240000 / pc->program.tempo) / GRID_W;
