@@ -22,6 +22,33 @@ private:
   unsigned long int nextEventTime;
   struct pattern_state allState[GRID_H];
   struct pattern_state *state;
+  int playIndex;
+
+  void noteOff(int patternIndex) {
+    struct pattern_state *state = &allState[patternIndex];
+    pattern_t *pattern = &pc->program.pattern[patternIndex];
+
+    for (int i = 0; i < GRID_H; i ++) {
+      if (state->activeNote[i] >= 0) {
+	midi->noteOn(state->activeChannel, state->activeNote[i], 0);
+	state->activeNote[i] = -1;
+      }
+    }
+  }
+
+  void noteOn(int patternIndex) {
+    pattern_t *pattern = &pc->program.pattern[patternIndex];
+    struct pattern_state *state = &allState[patternIndex];
+
+    for (int i = 0; i < GRID_H; i ++) {
+      int pad = i * GRID_W + state->column;
+      if (pattern->grid[pad / 8] & (1 << (pad % 8))) {
+	midi->noteOn(pattern->channel, pattern->note[i], pattern->velocity[i]);
+	state->activeNote[i] = pattern->note[i];
+      }
+    }
+    state->activeChannel = pattern->channel;
+  }
 
 public:
   Player(MIDI *midi,
@@ -42,19 +69,14 @@ public:
 
   void start() {
     pattern = pc->current;
+    playIndex = pc->currentIndex;
     state = &allState[pc->currentIndex];
     state->swingDelay = 0;
     nextEventTime = time();
   }
 
   void stop() {
-    // send note off for notes currently on
-    for (int i = 0; i < GRID_H; i ++) {
-      if (state->activeNote[i] >= 0) {
-	midi->noteOn(state->activeChannel, state->activeNote[i], 0);
-	state->activeNote[i] = -1;
-      }
-    }
+    noteOff(playIndex);
 
     // and clear the grid
     pc->highlightColumn = -1;
@@ -73,12 +95,7 @@ public:
       return when - now;
 
     // note off for currently playing notes
-    for (int i = 0; i < GRID_H; i ++) {
-      if (state->activeNote[i] >= 0) {
-	midi->noteOn(state->activeChannel, state->activeNote[i], 0);
-	state->activeNote[i] = -1;
-      }
-    }
+    noteOff(playIndex);
 
     // step one column forward. currently played pattern may not be
     // the one currently displayed, so take care when drawing those
@@ -88,6 +105,7 @@ public:
       if (pattern != pc->current) {
 	state->column = -1;
 	pattern = pc->current;
+	playIndex = pc->currentIndex;
 	state = &allState[pc->currentIndex];
       }
       state->column = 0;
@@ -98,14 +116,7 @@ public:
     pc->draw();
 
     // note on according to the grid
-    for (int i = 0; i < GRID_H; i ++) {
-      pad = i * GRID_W + state->column;
-      if (pattern->grid[pad / 8] & (1 << (pad % 8))) {
-	midi->noteOn(pattern->channel, pattern->note[i], pattern->velocity[i]);
-	state->activeNote[i] = pattern->note[i];
-      }
-    }
-    state->activeChannel = pattern->channel;
+    noteOn(playIndex);
 
     // schedule next step
     nextEventTime += (240000 / pc->program.tempo) / GRID_W;
