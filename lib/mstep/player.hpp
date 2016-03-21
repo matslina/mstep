@@ -18,10 +18,8 @@ private:
   PatternController *pc;
   void (*sleep)(unsigned long);
   unsigned long (*time)(void);
-  pattern_t *pattern;
   unsigned long int nextEventTime;
   struct pattern_state allState[GRID_H];
-  struct pattern_state *state;
   int playIndex;
 
   void noteOff(int patternIndex) {
@@ -68,10 +66,9 @@ public:
   }
 
   void start() {
-    pattern = pc->current;
     playIndex = pc->currentIndex;
-    state = &allState[pc->currentIndex];
-    state->swingDelay = 0;
+    allState[playIndex].swingDelay = 0;
+    allState[playIndex].column = -1;
     nextEventTime = time();
   }
 
@@ -81,13 +78,14 @@ public:
     // and clear the grid
     pc->highlightColumn = -1;
     pc->draw();
-    state->column = -1;
   }
 
   unsigned int tick() {
     int pad;
     unsigned long int now;
     unsigned long int when;
+    pattern_t *pattern = &pc->program.pattern[playIndex];
+    struct pattern_state *state = &allState[playIndex];
 
     now = time();
     when = nextEventTime + state->swingDelay;
