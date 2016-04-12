@@ -34,6 +34,9 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
   Player player = Player(midi, sleep, time, &ppc);
   Mode *currentMode;
 
+  for (int i = 0; i < sizeof(pattern_t); i++)
+    ((char *)&clipboard)[i] = 0;
+
   mode = 0;
   currentMode = 0;
   control->indicate(mode);
