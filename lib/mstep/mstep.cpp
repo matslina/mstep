@@ -1,5 +1,5 @@
 #include "mstep.hpp"
-#include "stuff.hpp"
+#include "util.hpp"
 #include "patterncontroller.hpp"
 #include "displaywriter.hpp"
 #include "mode.hpp"

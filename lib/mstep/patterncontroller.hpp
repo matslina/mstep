@@ -1,7 +1,7 @@
 #ifndef PATTERNCONTROLLER_HPP_9834871897128398
 #define PATTERNCONTROLLER_HPP_9834871897128398
 
-#include "stuff.hpp"
+#include "util.hpp"
 
 typedef struct pattern_t {
   char grid[GRID_BYTES];
