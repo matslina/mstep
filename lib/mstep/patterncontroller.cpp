@@ -41,22 +41,26 @@ char PatternController::modPattern(char delta) {
   return currentIndex;
 }
 
+void toggleRow(char *grid, int row) {
+  if (row >= 0)
+    for (int i = row * GRID_W; i < (row + 1) * GRID_W; i++)
+      grid[i >> 3] ^= 1 << (i & 7);
+}
+
+void toggleCol(char *grid, int col) {
+  if (col >= 0)
+    for (int i = col; i < GRID_W * GRID_H; i += GRID_W)
+      grid[i >> 3] ^= 1 << (i & 7);
+}
+
 void PatternController::draw() {
-  if (highlightColumn >= 0)
-    for (int i = highlightColumn; i < GRID_W * GRID_H; i += GRID_W)
-      current->grid[i >> 3] ^= 1 << (i & 7);
-  if (highlightRow >= 0)
-    for (int i = highlightRow * GRID_W; i < (highlightRow + 1) * GRID_W; i++)
-      current->grid[i >> 3] ^= 1 << (i & 7);
+  toggleCol(current->grid, highlightColumn);
+  toggleRow(current->grid, highlightRow);
 
   grid->draw(current->grid);
 
-  if (highlightColumn >= 0)
-    for (int i = highlightColumn; i < GRID_W * GRID_H; i += GRID_W)
-      current->grid[i >> 3] ^= 1 << (i & 7);
-  if (highlightRow >= 0)
-    for (int i = highlightRow * GRID_W; i < (highlightRow + 1) * GRID_W; i++)
-      current->grid[i >> 3] ^= 1 << (i & 7);
+  toggleCol(current->grid, highlightColumn);
+  toggleRow(current->grid, highlightRow);
 }
 
 char PatternController::modTempo(char delta) {
