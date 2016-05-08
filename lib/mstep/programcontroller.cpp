@@ -44,13 +44,13 @@ char ProgramController::modPattern(char delta) {
   return currentIndex;
 }
 
-void toggleRow(char *grid, int row) {
+static void toggleRow(char *grid, int row) {
   if (row >= 0)
     for (int i = row * GRID_W; i < (row + 1) * GRID_W; i++)
       grid[i >> 3] ^= 1 << (i & 7);
 }
 
-void toggleCol(char *grid, int col) {
+static void toggleCol(char *grid, int col) {
   if (col >= 0)
     for (int i = col; i < GRID_W * GRID_H; i += GRID_W)
       grid[i >> 3] ^= 1 << (i & 7);
