@@ -34,9 +34,6 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
   Player player = Player(midi, sleep, time, &ppc);
   Mode *currentMode;
 
-  for (int i = 0; i < sizeof(pattern_t); i++)
-    ((char *)&clipboard)[i] = 0;
-
   mode = 0;
   currentMode = 0;
   control->indicate(mode);
@@ -114,29 +111,16 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
       control->indicate(mode);
     }
 
-    if (event & Control::COPY) {
-      for (int i = 0; i < GRID_BYTES; i++) {
-	clipboard.grid[i] = ppc.current->grid[i];
-      }
-    } else if (event & Control::PASTE) {
-      for (int i = 0; i < GRID_BYTES; i++)
-	ppc.current->grid[i] |= clipboard.grid[i];
-      ppc.draw();
-    } else if (event & Control::CLEAR) {
-      for (int i = 0; i < GRID_BYTES; i++)
-	ppc.current->grid[i] = 0;
-      ppc.draw();
-    }
+    if (event & Control::COPY)
+      ppc.copy();
+    else if (event & Control::PASTE)
+      ppc.paste();
+    else if (event & Control::CLEAR)
+      ppc.clear();
 
     // unless in note mode, grid press updates grid state
-    if (!(mode & Control::NOTE)) {
-      char row, column;
-      while (grid->getPress(&row, &column)) {
-	char pad = row * GRID_W + column;
-	ppc.current->grid[pad >> 3] ^= 1 << (pad & 0x7);
-	ppc.draw();
-      }
-    }
+    if (!(mode & Control::NOTE))
+      ppc.updateGrid();
 
     // tick() according to mode
     if (currentMode) {

@@ -28,6 +28,9 @@ ProgramController::ProgramController(Grid *grid) {
   }
   program.tempo = DEFAULT_TEMPO;
 
+  for (int i = 0; i < sizeof(pattern_t); i++)
+    ((char *)&clipboard)[i] = 0;
+
   currentIndex = 0;
   current = &program.pattern[0];
   highlightColumn = -1;
@@ -76,4 +79,31 @@ char ProgramController::modSwing(char delta) {
 char ProgramController::modChannel(char delta) {
   current->channel = MIN(16, MAX(1, current->channel + delta));
   return current->channel;
+}
+
+void ProgramController::copy() {
+  for (int i = 0; i < GRID_BYTES; i++) {
+    clipboard.grid[i] = current->grid[i];
+  }
+}
+
+void ProgramController::paste() {
+  for (int i = 0; i < GRID_BYTES; i++)
+    current->grid[i] |= clipboard.grid[i];
+  draw();
+}
+
+void ProgramController::clear() {
+  for (int i = 0; i < GRID_BYTES; i++)
+    current->grid[i] = 0;
+  draw();
+}
+
+void ProgramController::updateGrid() {
+  char row, column;
+  while (grid->getPress(&row, &column)) {
+    char pad = row * GRID_W + column;
+    current->grid[pad >> 3] ^= 1 << (pad & 0x7);
+    draw();
+  }
 }

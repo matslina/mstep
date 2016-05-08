@@ -18,6 +18,7 @@ typedef struct program_t {
 class ProgramController {
 private:
   Grid *grid;
+  pattern_t clipboard;
 
 public:
   ProgramController(Grid *grid);
@@ -31,4 +32,8 @@ public:
   char modTempo(char delta);
   char modSwing(char delta);
   char modChannel(char delta);
+  void copy();
+  void paste();
+  void clear();
+  void updateGrid();
 };
