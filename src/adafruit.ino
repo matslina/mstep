@@ -243,20 +243,19 @@ class AdaControl : public Control {
 
 class AdaDisplay : public Display {
  public:
-  LiquidCrystal *lcd;
+  LiquidCrystal lcd = LiquidCrystal(A0, A1, A2, A3, A4, A5);
 
   void initialize() {
-    lcd = new LiquidCrystal(A0, A1, A2, A3, A4, A5);
-    lcd->begin(16, 2);
+    lcd.begin(16, 2);
   }
 
   void write(int row, char *msg) {
-    lcd->setCursor(0, row);
-    lcd->print(msg);
+    lcd.setCursor(0, row);
+    lcd.print(msg);
   }
 
   void clear() {
-    lcd->clear();
+    lcd.clear();
   }
 };
 
