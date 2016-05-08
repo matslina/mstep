@@ -23,21 +23,20 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
   pattern_t clipboard;
 
   DisplayWriter displayWriter = DisplayWriter(display);
-  ProgramController ppc = ProgramController(grid);
+  ProgramController programController = ProgramController(grid);
   StorageController storageController = StorageController(storage);
-
-  TempoMode tmode = TempoMode(&displayWriter, control, &ppc);
-  PatternMode pmode = PatternMode(&displayWriter, control, &ppc);
-  NoteMode nmode = NoteMode(grid, &displayWriter, control, &ppc);
-  LoadMode lmode = LoadMode(&displayWriter, control, &storageController, &ppc);
-  SaveMode smode = SaveMode(&displayWriter, control, &storageController, &ppc);
-  Player player = Player(midi, sleep, time, &ppc);
+  TempoMode tempoMode = TempoMode(&displayWriter, control, &programController);
+  PatternMode patternMode = PatternMode(&displayWriter, control, &programController);
+  NoteMode noteMode = NoteMode(grid, &displayWriter, control, &programController);
+  LoadMode loadMode = LoadMode(&displayWriter, control, &storageController, &programController);
+  SaveMode saveMode = SaveMode(&displayWriter, control, &storageController, &programController);
+  Player player = Player(midi, sleep, time, &programController);
   Mode *currentMode;
 
   mode = 0;
   currentMode = 0;
   control->indicate(mode);
-  ppc.draw();
+  programController.draw();
   displayWriter.clear()->string("MStep 4711")->cr()->string("  ready")->cr();
 
   while (1) {
@@ -83,21 +82,21 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
       // case we bring back the default display
       switch (event & ~mode) {
       case Control::NOTE:
-	currentMode = &nmode;
+	currentMode = &noteMode;
 	break;
       case Control::TEMPO:
-	currentMode = &tmode;
+	currentMode = &tempoMode;
 	break;
       case Control::PATTERN:
-	currentMode = &pmode;
+	currentMode = &patternMode;
 	break;
       case Control::LOAD:
 	if (!(mode & Control::PLAY))
-	  currentMode = &lmode;
+	  currentMode = &loadMode;
 	break;
       case Control::SAVE:
 	if (!(mode & Control::PLAY))
-	  currentMode = &smode;
+	  currentMode = &saveMode;
 	break;
       default:
 	displayWriter.clear();
@@ -112,15 +111,15 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
     }
 
     if (event & Control::COPY)
-      ppc.copy();
+      programController.copy();
     else if (event & Control::PASTE)
-      ppc.paste();
+      programController.paste();
     else if (event & Control::CLEAR)
-      ppc.clear();
+      programController.clear();
 
     // unless in note mode, grid press updates grid state
     if (!(mode & Control::NOTE))
-      ppc.updateGrid();
+      programController.updateGrid();
 
     // tick() according to mode
     if (currentMode) {
