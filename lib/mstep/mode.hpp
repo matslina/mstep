@@ -1,6 +1,4 @@
-#ifndef MODE_HPP_49a8dfuas48fjasefjaijf
-#define MODE_HPP_49a8dfuas48fjasefjaijf
-
+#pragma once
 
 class Mode {
 public:
@@ -43,5 +41,3 @@ public:
     return true;
   }
 };
-
-#endif

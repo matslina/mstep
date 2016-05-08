@@ -1,5 +1,4 @@
-#ifndef MSTEP_H_dfa982498fjasdjf982093jfas
-#define MSTEP_H_dfa982498fjasdjf982093jfas
+#pragma once
 
 #define DEFAULT_TEMPO 120
 #define DEFAULT_CHANNEL 0
@@ -61,5 +60,3 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
 	       Storage *storage,
 	       void (*sleep)(unsigned long),
 	       unsigned long (*time)(void));
-
-#endif

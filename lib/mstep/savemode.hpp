@@ -1,5 +1,4 @@
-#ifndef SAVEMODE_HPP_kgjsmcmcmmnxzcvbnsadc239czc
-#define SAVEMODE_HPP_kgjsmcmcmmnxzcvbnsadc239czc
+#pragma once
 
 #include "mode.hpp"
 #include "mstep.hpp"
@@ -53,5 +52,3 @@ public:
     return true;
   }
 };
-
-#endif

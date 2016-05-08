@@ -1,5 +1,4 @@
-#ifndef NOTEMODE_HPP_94lkdvnmxcsvslkfa9jseuixckmsd
-#define NOTEMODE_HPP_94lkdvnmxcsvslkfa9jseuixckmsd
+#pragma once
 
 #include "mode.hpp"
 #include "mstep.hpp"
@@ -88,5 +87,3 @@ public:
     return true;
   }
 };
-
-#endif

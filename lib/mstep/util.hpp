@@ -1,5 +1,4 @@
-#ifndef STUFF_HPP_48328fjkdsrfj2f9jewsokf
-#define STUFF_HPP_48328fjkdsrfj2f9jewsokf
+#pragma once
 
 #include "mstep.hpp"
 
@@ -10,5 +9,3 @@
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef PLAYMODE_HPP_kigfkamxcnmxcvowe8549kxcvklsdmcl
-#define PLAYMODE_HPP_kigfkamxcnmxcvowe8549kxcvklsdmcl
+#pragma once
 
 #include "mode.hpp"
 #include "mstep.hpp"
@@ -124,5 +123,3 @@ public:
     return MAX(0, nextEventTime + state->swingDelay - time());
   }
 };
-
-#endif

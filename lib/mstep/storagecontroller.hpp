@@ -1,5 +1,4 @@
-#ifndef STORAGECONTROLLER_HPP_fs989864kjfdnmvcnbsire832
-#define STORAGECONTROLLER_HPP_fs989864kjfdnmvcnbsire832
+#pragma once
 
 #include "mstep.hpp"
 #include "patterncontroller.hpp"
@@ -67,5 +66,3 @@ public:
     return true;
   }
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef PATTERNCONTROLLER_HPP_9834871897128398
-#define PATTERNCONTROLLER_HPP_9834871897128398
+#pragma once
 
 #include "util.hpp"
 
@@ -33,6 +32,3 @@ public:
   char modSwing(char delta);
   char modChannel(char delta);
 };
-
-
-#endif

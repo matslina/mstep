@@ -1,5 +1,4 @@
-#ifndef DISPLAYCONTROLLER_HPP_21349frjdfija49f
-#define DISPLAYCONTROLLER_HPP_21349frjdfija49f
+#pragma once
 
 #include "mstep.hpp"
 
@@ -98,5 +97,3 @@ DisplayWriter *DisplayWriter::namedInteger(const char *name, unsigned char i) {
   cr();
   return this;
 }
-
-#endif

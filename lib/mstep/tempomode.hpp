@@ -1,5 +1,4 @@
-#ifndef TEMPOMODE_HPP_9439043982982ksfdfdskfdkfdkmfdskml
-#define TEMPOMODE_HPP_9439043982982ksfdfdskfdkfdkmfdskml
+#pragma once
 
 #include "mode.hpp"
 #include "mstep.hpp"
@@ -25,5 +24,3 @@ public:
     fieldFun = tmodeFieldFun;
   }
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef LOADMODE_HPP_ddkritigdksiefdk97978736152849dkrk
-#define LOADMODE_HPP_ddkritigdksiefdk97978736152849dkrk
+#pragma once
 
 #include "mode.hpp"
 #include "mstep.hpp"
@@ -55,5 +54,3 @@ public:
     return true;
   }
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef PATTERNMODE_HPP_98387245kjdrkjfdsheiudsjdskj
-#define PATTERNMODE_HPP_98387245kjdrkjfdsheiudsjdskj
+#pragma once
 
 #include "mstep.hpp"
 #include "mode.hpp"
@@ -28,5 +27,3 @@ public:
     fieldFun = pmodeFieldFun;
   }
 };
-
-#endif
