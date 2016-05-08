@@ -2,7 +2,7 @@
 
 #include "mode.hpp"
 #include "mstep.hpp"
-#include "patterncontroller.hpp"
+#include "programcontroller.hpp"
 
 struct pattern_state {
   char activeNote[GRID_H];

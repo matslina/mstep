@@ -1,7 +1,7 @@
 #pragma once
 
 #include "mstep.hpp"
-#include "patterncontroller.hpp"
+#include "programcontroller.hpp"
 
 #define PROGRAM_NAME_MAX 8
 

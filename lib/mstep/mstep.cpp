@@ -1,6 +1,6 @@
 #include "mstep.hpp"
 #include "util.hpp"
-#include "patterncontroller.hpp"
+#include "programcontroller.hpp"
 #include "displaywriter.hpp"
 #include "mode.hpp"
 #include "patternmode.hpp"

@@ -3,7 +3,7 @@
 #include "mode.hpp"
 #include "mstep.hpp"
 #include "displaywriter.hpp"
-#include "patterncontroller.hpp"
+#include "programcontroller.hpp"
 
 
 static const char *tmodeFieldName[] = \
