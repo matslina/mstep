@@ -11,6 +11,7 @@ private:
   DisplayWriter *displayWriter;
   Control *control;
   ProgramController *pc;
+  pattern_t *pattern;
   int activeRow;
   int field;
 
@@ -26,6 +27,7 @@ public:
   void start() {
     field = 0;
     activeRow = -1;
+    pattern = &pc->program.pattern[pc->currentIndex];
     displayWriter->clear()->string("NOTE          >")->cr();
     displayWriter->string("  <select row>")->cr();
   }
@@ -67,17 +69,17 @@ public:
     displayWriter->clear();
     switch (field) {
     case 0:
-      value = pc->current->note[this->activeRow];
+      value = pattern->note[this->activeRow];
       value = MIN(127, MAX(0, value + mod));
-      pc->current->note[this->activeRow] = value;
+      pattern->note[this->activeRow] = value;
       displayWriter->string("NOTE          >")->cr()->		\
         string("  ")->integer(this->activeRow)->string(": ")->	\
 	note(value)->cr();
       break;
     case 1:
-      value = pc->current->velocity[this->activeRow];
+      value = pattern->velocity[this->activeRow];
       value = MIN(127, MAX(0, value + mod));
-      pc->current->velocity[this->activeRow] = value;
+      pattern->velocity[this->activeRow] = value;
       displayWriter->string("VELOCITY      >")->cr()->		\
         string("  ")->integer(this->activeRow)->string(": ")->	\
 	integer(value)->cr();

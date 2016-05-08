@@ -19,11 +19,11 @@ class ProgramController {
 private:
   Grid *grid;
   pattern_t clipboard;
+  pattern_t *current;
 
 public:
   ProgramController(Grid *grid);
   program_t program;
-  pattern_t *current;
   int currentIndex;
   char highlightColumn;
   char highlightRow;
