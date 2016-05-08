@@ -2,7 +2,7 @@
 #include "util.hpp"
 #include "patterncontroller.hpp"
 
-PatternController::PatternController(Grid *grid) {
+ProgramController::ProgramController(Grid *grid) {
   this->grid = grid;
 
   // defaults
@@ -34,7 +34,7 @@ PatternController::PatternController(Grid *grid) {
   highlightRow = -1;
 }
 
-char PatternController::modPattern(char delta) {
+char ProgramController::modPattern(char delta) {
   currentIndex = MIN(GRID_H - 1, MAX(0, currentIndex + delta));
   current = &program.pattern[currentIndex];
   draw();
@@ -53,7 +53,7 @@ void toggleCol(char *grid, int col) {
       grid[i >> 3] ^= 1 << (i & 7);
 }
 
-void PatternController::draw() {
+void ProgramController::draw() {
   toggleCol(current->grid, highlightColumn);
   toggleRow(current->grid, highlightRow);
 
@@ -63,17 +63,17 @@ void PatternController::draw() {
   toggleRow(current->grid, highlightRow);
 }
 
-char PatternController::modTempo(char delta) {
+char ProgramController::modTempo(char delta) {
   program.tempo = MIN(240, MAX(0, program.tempo + delta));
   return program.tempo;
 }
 
-char PatternController::modSwing(char delta) {
+char ProgramController::modSwing(char delta) {
   current->swing = MIN(75, MAX(50, current->swing + delta));
   return current->swing;
 }
 
-char PatternController::modChannel(char delta) {
+char ProgramController::modChannel(char delta) {
   current->channel = MIN(16, MAX(1, current->channel + delta));
   return current->channel;
 }

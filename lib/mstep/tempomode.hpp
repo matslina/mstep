@@ -10,13 +10,13 @@
 static const char *tmodeFieldName[] = \
   {"TEMPO"};
 
-static char (PatternController::*tmodeFieldFun[])(char) = \
-  {&PatternController::modTempo};
+static char (ProgramController::*tmodeFieldFun[])(char) = \
+  {&ProgramController::modTempo};
 
 
 class TempoMode : public MultiFieldMode {
 public:
-  TempoMode(DisplayWriter *displayWriter, Control *control, PatternController *pc) {
+  TempoMode(DisplayWriter *displayWriter, Control *control, ProgramController *pc) {
     this->displayWriter = displayWriter;
     this->control = control;
     this->patternController = pc;

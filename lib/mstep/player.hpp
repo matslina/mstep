@@ -15,7 +15,7 @@ struct pattern_state {
 class Player {
 private:
   MIDI *midi;
-  PatternController *pc;
+  ProgramController *pc;
   void (*sleep)(unsigned long);
   unsigned long (*time)(void);
   unsigned long int nextEventTime;
@@ -52,7 +52,7 @@ public:
   Player(MIDI *midi,
 	 void (*sleep)(unsigned long),
 	 unsigned long (*time)(void),
-	 PatternController *pc) {
+	 ProgramController *pc) {
     this->midi = midi;
     this->pc = pc;
     this->sleep = sleep;

@@ -11,13 +11,13 @@ private:
   Grid *grid;
   DisplayWriter *displayWriter;
   Control *control;
-  PatternController *pc;
+  ProgramController *pc;
   int activeRow;
   int field;
 
 public:
   NoteMode(Grid *grid, DisplayWriter *displayWriter, Control *control,
-	   PatternController *pc) {
+	   ProgramController *pc) {
     this->grid = grid;
     this->displayWriter = displayWriter;
     this->control = control;

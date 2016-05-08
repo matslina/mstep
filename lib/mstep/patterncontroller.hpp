@@ -16,12 +16,12 @@ typedef struct program_t {
   unsigned char tempo;
 } program_t;
 
-class PatternController {
+class ProgramController {
 private:
   Grid *grid;
 
 public:
-  PatternController(Grid *grid);
+  ProgramController(Grid *grid);
   program_t program;
   pattern_t *current;
   int currentIndex;

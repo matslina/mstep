@@ -11,15 +11,15 @@ static const char *pmodeFieldName[] = \
    "SWING",
    "CHANNEL"};
 
-static char (PatternController::*pmodeFieldFun[])(char) = \
-  {&PatternController::modPattern,
-   &PatternController::modSwing,
-   &PatternController::modChannel};
+static char (ProgramController::*pmodeFieldFun[])(char) = \
+  {&ProgramController::modPattern,
+   &ProgramController::modSwing,
+   &ProgramController::modChannel};
 
 
 class PatternMode : public MultiFieldMode {
 public:
-  PatternMode(DisplayWriter *displayWriter, Control *control, PatternController *pc) {
+  PatternMode(DisplayWriter *displayWriter, Control *control, ProgramController *pc) {
     this->displayWriter = displayWriter;
     this->control = control;
     this->patternController = pc;

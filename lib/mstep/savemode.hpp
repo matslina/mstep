@@ -12,12 +12,12 @@ private:
   DisplayWriter *displayWriter;
   Control *control;
   StorageController *storage;
-  PatternController *pc;
+  ProgramController *pc;
   int slot;
 
 public:
   SaveMode(DisplayWriter *displayWriter, Control *control,
-	   StorageController *storage, PatternController *pc) {
+	   StorageController *storage, ProgramController *pc) {
     this->displayWriter = displayWriter;
     this->control = control;
     this->storage = storage;

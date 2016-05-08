@@ -23,7 +23,7 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
   pattern_t clipboard;
 
   DisplayWriter displayWriter = DisplayWriter(display);
-  PatternController ppc = PatternController(grid);
+  ProgramController ppc = ProgramController(grid);
   StorageController storageController = StorageController(storage);
 
   TempoMode tmode = TempoMode(&displayWriter, control, &ppc);

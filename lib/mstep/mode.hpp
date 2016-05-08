@@ -14,12 +14,12 @@ private:
   char i;
 
 protected:
-  PatternController *patternController;
+  ProgramController *patternController;
   DisplayWriter *displayWriter;
   Control *control;
   char numFields;
   const char **fieldName;
-  char (PatternController::**fieldFun)(char);
+  char (ProgramController::**fieldFun)(char);
 
 public:
   void start() {
