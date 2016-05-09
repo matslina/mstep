@@ -27,7 +27,7 @@ public:
   void start() {
     field = 0;
     activeRow = -1;
-    pattern = &pc->program.pattern[pc->currentIndex];
+    pattern = &pc->program.pattern[pc->currentPattern];
     displayWriter->clear()->string("NOTE          >")->cr();
     displayWriter->string("  <select row>")->cr();
   }

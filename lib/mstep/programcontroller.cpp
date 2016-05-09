@@ -31,17 +31,17 @@ ProgramController::ProgramController(Grid *grid) {
   for (int i = 0; i < sizeof(pattern_t); i++)
     ((char *)&clipboard)[i] = 0;
 
-  currentIndex = 0;
+  currentPattern = 0;
   current = &program.pattern[0];
   highlightColumn = -1;
   highlightRow = -1;
 }
 
 char ProgramController::modPattern(char delta) {
-  currentIndex = MIN(GRID_H - 1, MAX(0, currentIndex + delta));
-  current = &program.pattern[currentIndex];
+  currentPattern = MIN(GRID_H - 1, MAX(0, currentPattern + delta));
+  current = &program.pattern[currentPattern];
   draw();
-  return currentIndex;
+  return currentPattern;
 }
 
 static void toggleRow(char *grid, int row) {

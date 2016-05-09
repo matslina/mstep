@@ -63,7 +63,7 @@ public:
   }
 
   void start() {
-    playIndex = pc->currentIndex;
+    playIndex = pc->currentPattern;
     allState[playIndex].swingDelay = 0;
     allState[playIndex].column = 0;
     nextEventTime = time();
@@ -94,7 +94,7 @@ public:
     // if playing pattern is currently displayed: update the
     // highlighted column.
     pc->highlightColumn = -1;
-    if (playIndex == pc->currentIndex)
+    if (playIndex == pc->currentPattern)
       pc->highlightColumn = state->column;
     pc->draw();
 
@@ -102,8 +102,8 @@ public:
     // currently displayed pattern and bring along data so currently
     // playing notes are turned off properly.
     if (++state->column == GRID_W) {
-      if (playIndex != pc->currentIndex) {
-	playIndex = pc->currentIndex;
+      if (playIndex != pc->currentPattern) {
+	playIndex = pc->currentPattern;
 	pattern = &pc->program.pattern[playIndex];
 	for (int i = 0; i < GRID_H; i++)
 	  allState[playIndex].activeNote[i] = state->activeNote[i];
