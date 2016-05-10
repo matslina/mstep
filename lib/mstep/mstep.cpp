@@ -17,23 +17,26 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
 	       void (*sleep)(unsigned long),
 	       unsigned long (*time)(void)) {
   int event;
-  int mode;
+  int flags;
   int sleepDuration;
 
   DisplayWriter displayWriter = DisplayWriter(display);
   ProgramController programController = ProgramController(grid);
   StorageController storageController = StorageController(storage);
+
+  Player player = Player(midi, sleep, time, &programController);
+
   TempoMode tempoMode = TempoMode(&displayWriter, control, &programController);
   PatternMode patternMode = PatternMode(&displayWriter, control, &programController);
   NoteMode noteMode = NoteMode(grid, &displayWriter, control, &programController);
   LoadMode loadMode = LoadMode(&displayWriter, control, &storageController, &programController);
   SaveMode saveMode = SaveMode(&displayWriter, control, &storageController, &programController);
-  Player player = Player(midi, sleep, time, &programController);
+
   Mode *currentMode;
 
-  mode = 0;
+  flags = 0;
   currentMode = 0;
-  control->indicate(mode);
+  control->indicate(flags);
   programController.draw();
   displayWriter.clear()->string("MStep 4711")->cr()->string("  ready")->cr();
 
@@ -41,7 +44,7 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
 
     // playback is prio 1. don't bother processing events unless we
     // have "enough" time.
-    if (mode & Control::PLAY) {
+    if (flags & Control::PLAY) {
       sleepDuration = player.tick();
       if (sleepDuration < 30) {
 	sleep(sleepDuration);
@@ -55,13 +58,13 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
       if (!keepCurrentModeRunning) {
 	currentMode->stop();
 	currentMode = 0;
-	mode &= Control::PLAY;
-	control->indicate(mode);
+	flags &= Control::PLAY;
+	control->indicate(flags);
       }
     }
 
     // unless in note mode, grid press updates grid state
-    if (!(mode & Control::NOTE))
+    if (!(flags & Control::NOTE))
       programController.updateGrid();
 
     event = control->getEvent();
@@ -99,12 +102,12 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
       programController.clear();
       break;
     case Control::PLAY:
-      if (mode & Control::PLAY)
+      if (flags & Control::PLAY)
 	player.stop();
       else
 	player.start();
-      mode ^= event & Control::PLAY;
-      control->indicate(mode);
+      flags ^= event & Control::PLAY;
+      control->indicate(flags);
       break;
 
     default:
@@ -117,7 +120,7 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
 
       // the bit logic in the head of this switch ensures that we
       // don't restart a Mode that was just stopped.
-      switch (event & ~mode) {
+      switch (event & ~flags) {
       case Control::NOTE:
 	currentMode = &noteMode;
 	break;
@@ -128,11 +131,11 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
 	currentMode = &patternMode;
 	break;
       case Control::LOAD:
-	if (!(mode & Control::PLAY))
+	if (!(flags & Control::PLAY))
 	  currentMode = &loadMode;
 	break;
       case Control::SAVE:
-	if (!(mode & Control::PLAY))
+	if (!(flags & Control::PLAY))
 	  currentMode = &saveMode;
 	break;
       default:
@@ -143,8 +146,8 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
 
       if (currentMode)
 	currentMode->start();
-      mode = (mode & Control::PLAY) | (event & ~mode);
-      control->indicate(mode);
+      flags = (flags & Control::PLAY) | (event & ~flags);
+      control->indicate(flags);
       break;
     }
   }
