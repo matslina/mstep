@@ -1,6 +1,7 @@
 #pragma once
 
 #define DEFAULT_TEMPO 120
+#define DEFAULT_SWING 50
 #define DEFAULT_CHANNEL 0
 
 #ifndef MSTEP_GRID_WIDTH

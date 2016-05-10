@@ -95,7 +95,7 @@ unsigned int Player::tick() {
   nextEventTime += (240000 / pc->program.tempo) / GRID_W;
   state->swingDelay = 0;
   if (!(state->column & 1))
-    state->swingDelay = (((float)(pattern->swing - 50) / 50) *
+    state->swingDelay = (((float)(pc->program.swing - 50) / 50) *
 			 (240000 / pc->program.tempo) / GRID_W);
 
   return MAX(0, nextEventTime + state->swingDelay - time());

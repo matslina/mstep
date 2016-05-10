@@ -8,7 +8,6 @@ ProgramController::ProgramController(Grid *grid) {
   // defaults
   for (int i = 0; i < GRID_H; i++) {
     program.pattern[i].channel = DEFAULT_CHANNEL;
-    program.pattern[i].swing = 50;
     for (int j = 0; j < GRID_BYTES; j++)
       program.pattern[i].grid[j] = 0;
     for (int j = 0; j < GRID_H; j++) {
@@ -29,6 +28,7 @@ ProgramController::ProgramController(Grid *grid) {
   for (int i = 0; i < GRID_BYTES; i++)
     program.scene[i] = 0;
   program.tempo = DEFAULT_TEMPO;
+  program.swing = DEFAULT_SWING;
 
   for (int i = 0; i < sizeof(pattern_t); i++)
     ((char *)&clipboard)[i] = 0;
@@ -77,8 +77,8 @@ char ProgramController::modTempo(char delta) {
 }
 
 char ProgramController::modSwing(char delta) {
-  current->swing = MIN(75, MAX(50, current->swing + delta));
-  return current->swing;
+  program.swing = MIN(75, MAX(50, program.swing + delta));
+  return program.swing;
 }
 
 char ProgramController::modChannel(char delta) {

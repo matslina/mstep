@@ -7,13 +7,13 @@ typedef struct pattern_t {
   char note[MSTEP_GRID_HEIGHT];
   char velocity[MSTEP_GRID_HEIGHT];
   char channel;
-  char swing;
 } pattern_t;
 
 typedef struct program_t {
   pattern_t pattern[MSTEP_GRID_HEIGHT];
   char scene[GRID_BYTES];
   unsigned char tempo;
+  char swing;
 } program_t;
 
 class ProgramController {
