@@ -19,8 +19,6 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
   int event;
   int mode;
   int sleepDuration;
-  int tempo = DEFAULT_TEMPO;
-  pattern_t clipboard;
 
   DisplayWriter displayWriter = DisplayWriter(display);
   ProgramController programController = ProgramController(grid);
