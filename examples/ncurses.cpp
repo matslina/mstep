@@ -258,8 +258,10 @@ public:
   }
 
   int getEvent() {
+    pthread_mutex_lock(mutex_curses);
     int ret = event;
     event = 0;
+    pthread_mutex_unlock(mutex_curses);
     return ret;
   }
 
@@ -270,8 +272,11 @@ public:
   }
 
   bool getSelect() {
-    bool ret = select;
+    bool ret;
+    pthread_mutex_lock(mutex_curses);
+    ret = select;
     select = false;
+    pthread_mutex_unlock(mutex_curses);
     return ret;
   }
 
@@ -295,6 +300,7 @@ public:
   }
 
   void keyPress(int c) {
+    pthread_mutex_lock(mutex_curses);
     c = tolower(c);
     for (int i = 0; i < sizeof(COMMANDCHAR); i++)
       if (tolower(COMMANDCHAR[i]) == c)
@@ -314,6 +320,7 @@ public:
       break;
 
     }
+    pthread_mutex_unlock(mutex_curses);
   }
 
 private:
