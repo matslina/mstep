@@ -68,8 +68,6 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
 
     event = control->getEvent();
 
-    if (!event) continue;
-
     // only process events when exactly 1 bit is set and the event is
     // of a known type
     if (!event ||
