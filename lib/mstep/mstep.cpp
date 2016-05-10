@@ -50,36 +50,75 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
 	continue;
       }
     }
-    sleep(15);
+
+    // if one of the Modes is active, give it a tick()
+    if (currentMode) {
+      bool keepCurrentModeRunning = currentMode->tick();
+      if (!keepCurrentModeRunning) {
+	currentMode->stop();
+	currentMode = 0;
+	mode &= Control::PLAY;
+	control->indicate(mode);
+      }
+    }
+
+    // unless in note mode, grid press updates grid state
+    if (!(mode & Control::NOTE))
+      programController.updateGrid();
 
     event = control->getEvent();
 
-    // special treatment of quit and play events, coz they're special.
-    if (event & Control::QUIT)
+    if (!event) continue;
+
+    // only process events when exactly 1 bit is set and the event is
+    // of a known type
+    if (!event ||
+	event & (event - 1) ||
+	!(event & (Control::QUIT |
+		   Control::COPY |
+		   Control::PASTE |
+		   Control::CLEAR |
+		   Control::PLAY |
+		   Control::NOTE |
+		   Control::TEMPO |
+		   Control::PATTERN |
+		   Control::LOAD |
+		   Control::SAVE))) {
+      sleep(15);
+      continue;
+    }
+
+    switch (event) {
+    case Control::QUIT:
+      return;
+    case Control::COPY:
+      programController.copy();
       break;
-    if (event & Control::PLAY) {
+    case Control::PASTE:
+      programController.paste();
+      break;
+    case Control::CLEAR:
+      programController.clear();
+      break;
+    case Control::PLAY:
       if (mode & Control::PLAY)
 	player.stop();
       else
 	player.start();
       mode ^= event & Control::PLAY;
       control->indicate(mode);
-    }
+      break;
 
-    // only process event if it's unambiguous and it isn't garbage
-    if (event && !(event & (event - 1)) &&
-	event & (Control::NOTE | Control::TEMPO |
-		 Control::PATTERN | Control::LOAD | Control::SAVE)) {
-
-      // with the exception of PLAY, all modes are mutually exclusive,
-      // so we stop the current mode
+    default:
+      // the remaining events are all associated with a Mode.  these
+      // are mutually exclusive, so the current one must be stopped.
       if (currentMode) {
 	currentMode->stop();
 	currentMode = 0;
       }
 
-      // start the requested mode, unless it was just stopped in which
-      // case we bring back the default display
+      // the bit logic in the head of this switch ensures that we
+      // don't restart a Mode that was just stopped.
       switch (event & ~mode) {
       case Control::NOTE:
 	currentMode = &noteMode;
@@ -99,35 +138,16 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
 	  currentMode = &saveMode;
 	break;
       default:
+	// TODO: make this display something useful
 	displayWriter.clear();
 	break;
       }
 
       if (currentMode)
 	currentMode->start();
-
       mode = (mode & Control::PLAY) | (event & ~mode);
       control->indicate(mode);
-    }
-
-    if (event & Control::COPY)
-      programController.copy();
-    else if (event & Control::PASTE)
-      programController.paste();
-    else if (event & Control::CLEAR)
-      programController.clear();
-
-    // unless in note mode, grid press updates grid state
-    if (!(mode & Control::NOTE))
-      programController.updateGrid();
-
-    // tick() according to mode
-    if (currentMode) {
-      if (!currentMode->tick()) {
-	currentMode->stop();
-	mode &= Control::PLAY;
-	control->indicate(mode);
-      }
+      break;
     }
   }
 }
