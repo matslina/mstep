@@ -18,7 +18,6 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
 	       unsigned long (*time)(void)) {
   int event;
   int flags;
-  int sleepDuration;
 
   DisplayWriter displayWriter = DisplayWriter(display);
   ProgramController programController = ProgramController(grid);
@@ -45,9 +44,9 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
     // playback is prio 1. don't bother processing events unless we
     // have "enough" time.
     if (flags & Control::PLAY) {
-      sleepDuration = player.tick();
-      if (sleepDuration < 30) {
-	sleep(sleepDuration);
+      int duration = player.tick();
+      if (duration < 30) {
+	sleep(duration);
 	continue;
       }
     }
