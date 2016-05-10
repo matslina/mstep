@@ -30,4 +30,5 @@ public:
   void start();
   void stop();
   unsigned int tick();
+  void toggleSceneMode();
 };

@@ -81,7 +81,8 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
 		   Control::TEMPO |
 		   Control::PATTERN |
 		   Control::LOAD |
-		   Control::SAVE))) {
+		   Control::SAVE |
+		   Control::SCENE))) {
       sleep(15);
       continue;
     }
@@ -106,6 +107,10 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
       flags ^= event & Control::PLAY;
       control->indicate(flags);
       break;
+
+    case Control::SCENE:
+	programController.toggleSceneMode();
+	player.toggleSceneMode();
 
     default:
       // the remaining events are all associated with a Mode.  these

@@ -101,3 +101,6 @@ unsigned int Player::tick() {
   return MAX(0, nextEventTime + state->swingDelay - time());
 }
 
+void Player::toggleSceneMode() {
+  // TODO: implement me!
+}

@@ -26,6 +26,8 @@ ProgramController::ProgramController(Grid *grid) {
     program.pattern[i].note[5] = 46;
     program.pattern[i].note[6] = 39;
   }
+  for (int i = 0; i < GRID_BYTES; i++)
+    program.scene[i] = 0;
   program.tempo = DEFAULT_TEMPO;
 
   for (int i = 0; i < sizeof(pattern_t); i++)
@@ -33,13 +35,16 @@ ProgramController::ProgramController(Grid *grid) {
 
   currentPattern = 0;
   current = &program.pattern[0];
+  currentGrid = current->grid;
   highlightColumn = -1;
   highlightRow = -1;
+  sceneMode = false;
 }
 
 char ProgramController::modPattern(char delta) {
   currentPattern = MIN(GRID_H - 1, MAX(0, currentPattern + delta));
   current = &program.pattern[currentPattern];
+  currentGrid = current->grid;
   draw();
   return currentPattern;
 }
@@ -57,13 +62,13 @@ static void toggleCol(char *grid, int col) {
 }
 
 void ProgramController::draw() {
-  toggleCol(current->grid, highlightColumn);
-  toggleRow(current->grid, highlightRow);
+  toggleCol(currentGrid, highlightColumn);
+  toggleRow(currentGrid, highlightRow);
 
-  grid->draw(current->grid);
+  grid->draw(currentGrid);
 
-  toggleCol(current->grid, highlightColumn);
-  toggleRow(current->grid, highlightRow);
+  toggleCol(currentGrid, highlightColumn);
+  toggleRow(currentGrid, highlightRow);
 }
 
 char ProgramController::modTempo(char delta) {
@@ -83,19 +88,19 @@ char ProgramController::modChannel(char delta) {
 
 void ProgramController::copy() {
   for (int i = 0; i < GRID_BYTES; i++) {
-    clipboard.grid[i] = current->grid[i];
+    clipboard.grid[i] = currentGrid[i];
   }
 }
 
 void ProgramController::paste() {
   for (int i = 0; i < GRID_BYTES; i++)
-    current->grid[i] |= clipboard.grid[i];
+    currentGrid[i] |= clipboard.grid[i];
   draw();
 }
 
 void ProgramController::clear() {
   for (int i = 0; i < GRID_BYTES; i++)
-    current->grid[i] = 0;
+    currentGrid[i] = 0;
   draw();
 }
 
@@ -103,7 +108,18 @@ void ProgramController::updateGrid() {
   char row, column;
   while (grid->getPress(&row, &column)) {
     char pad = row * GRID_W + column;
-    current->grid[pad >> 3] ^= 1 << (pad & 0x7);
+    currentGrid[pad >> 3] ^= 1 << (pad & 0x7);
     draw();
   }
+}
+
+void ProgramController::toggleSceneMode() {
+  sceneMode = !sceneMode;
+  if (sceneMode)
+    currentGrid = program.scene;
+  else
+    currentGrid = current->grid;
+  highlightColumn = -1;
+  highlightRow = -1;
+  draw();
 }

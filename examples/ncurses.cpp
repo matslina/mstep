@@ -232,9 +232,9 @@ public:
 
 static const char *COMMAND[] = {"Play", "Note", "Tempo", "pAttern",
 				"cOpy", "paSte", "cleaR", "Load",
-				"saVe", "Quit"};
+				"saVe", "sCene", "Quit"};
 static const char COMMANDCHAR[] = {'P', 'N', 'T', 'A', 'O',
-				   'S', 'R', 'L', 'V'};
+				   'S', 'R', 'L', 'V', 'C'};
 
 class CursesControl : public Control {
 public:

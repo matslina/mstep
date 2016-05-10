@@ -35,6 +35,7 @@ class Control {
     CLEAR = 64,
     LOAD = 128,
     SAVE = 256,
+    SCENE = 512,
     QUIT = 2048,
   };
   virtual void indicate(int event) = 0;
