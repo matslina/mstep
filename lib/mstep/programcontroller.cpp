@@ -42,10 +42,13 @@ ProgramController::ProgramController(Grid *grid) {
 }
 
 char ProgramController::modPattern(char delta) {
-  currentPattern = MIN(GRID_H - 1, MAX(0, currentPattern + delta));
-  current = &program.pattern[currentPattern];
-  currentGrid = current->grid;
-  draw();
+  if (delta) {
+    currentPattern = MIN(GRID_H - 1, MAX(0, currentPattern + delta));
+    current = &program.pattern[currentPattern];
+    currentGrid = current->grid;
+    highlightColumn = -1;
+    draw();
+  }
   return currentPattern;
 }
 

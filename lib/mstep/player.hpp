@@ -7,7 +7,11 @@ struct pattern_state {
   char activeNote[GRID_H];
   char activeChannel;
   char column;
-  int swingDelay;
+};
+
+struct scene_state {
+  char column;
+  char activePattern[GRID_H / 8 + 1];
 };
 
 class Player {
@@ -18,9 +22,15 @@ private:
   unsigned long (*time)(void);
   unsigned long int nextEventTime;
   struct pattern_state allState[GRID_H];
+  struct scene_state sceneState;
   int playIndex;
+  bool sceneMode;
+  bool sceneModeRequested;
+  int stepCount;
+  int swingDelay;
   void noteOff(int patternIndex);
   void noteOn(int patternIndex);
+  void stepPattern(int patternIndex);
 
 public:
   Player(MIDI *midi,
@@ -30,5 +40,7 @@ public:
   void start();
   void stop();
   unsigned int tick();
+  void tickPattern();
+  void tickScene();
   void toggleSceneMode();
 };
