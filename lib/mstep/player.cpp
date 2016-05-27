@@ -107,7 +107,7 @@ void Player::tickPattern() {
 
   // if playing pattern is currently displayed: update the
   // highlighted column.
-  if (playIndex == pc->currentPattern) {
+  if (playIndex == pc->currentPattern && !sceneModeRequested) {
     pc->highlightColumn = state->column;
     pc->draw();
   }
