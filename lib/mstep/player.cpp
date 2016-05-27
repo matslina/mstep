@@ -1,7 +1,5 @@
 #include "player.hpp"
 
-#include <stdio.h>
-
 static void noteOff(MIDI *midi, struct pattern_state *state) {
   for (int i = 0; i < GRID_H; i++) {
     if (state->activeNote[i] >= 0) {
