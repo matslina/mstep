@@ -186,7 +186,7 @@ public:
       sprintf(buf, "[%d] %s%d (%d)",
 	      active->at(i).channel,
 	      notestr[active->at(i).number % 12],
-	      active->at(i).number / 12 - 1,
+	      active->at(i).number / 12,
 	      active->at(i).velocity);
       mvwaddstr(this->win, 1 + i, 1, buf);
     }

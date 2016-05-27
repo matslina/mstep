@@ -74,17 +74,10 @@ DisplayWriter *DisplayWriter::cr() {
 }
 
 DisplayWriter *DisplayWriter::note(unsigned char value) {
-  int octave;
-  string(notes[value % 12]);
-
-  octave = value / 12 - 2;
-  if (octave < 0) {
-    string("-");
-    octave *= -1;
-  }
-  integer(octave);
+  string(notes[value % 12]); // name
+  integer(value / 12); // octave
   string(" (");
-  integer(value);
+  integer(value); // MIDI number
   string(")");
   return this;
 }
