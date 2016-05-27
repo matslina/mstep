@@ -2,11 +2,8 @@
 
 #include <stdio.h>
 
-void Player::noteOff(int patternIndex) {
-  struct pattern_state *state = &allState[patternIndex];
-  pattern_t *pattern = &pc->program.pattern[patternIndex];
-
-  for (int i = 0; i < GRID_H; i ++) {
+static void noteOff(MIDI *midi, struct pattern_state *state) {
+  for (int i = 0; i < GRID_H; i++) {
     if (state->activeNote[i] >= 0) {
       midi->noteOn(state->activeChannel, state->activeNote[i], 0);
       state->activeNote[i] = -1;
@@ -14,11 +11,10 @@ void Player::noteOff(int patternIndex) {
   }
 }
 
-void Player::noteOn(int patternIndex) {
-  pattern_t *pattern = &pc->program.pattern[patternIndex];
-  struct pattern_state *state = &allState[patternIndex];
-
-  for (int i = 0; i < GRID_H; i ++) {
+static void noteOn(MIDI *midi,
+		   struct pattern_state *state,
+		   pattern_t *pattern) {
+  for (int i = 0; i < GRID_H; i++) {
     int pad = i * GRID_W + state->column;
     if (pattern->grid[pad / 8] & (1 << (pad % 8))) {
       midi->noteOn(pattern->channel, pattern->note[i], pattern->velocity[i]);
@@ -60,16 +56,17 @@ void Player::start() {
 }
 
 void Player::stop() {
-  noteOff(playIndex);
+  noteOff(midi, &allState[playIndex]);
   pc->highlightColumn = -1;
   pc->draw();
 }
 
 void Player::stepPattern(int index) {
   struct pattern_state *state = &allState[index];
+  pattern_t *pattern = &pc->program.pattern[index];
 
-  noteOff(index);
-  noteOn(index);
+  noteOff(midi, state);
+  noteOn(midi, state, pattern);
 
   if (++state->column == GRID_W)
     state->column = 0;
@@ -150,7 +147,7 @@ void Player::tickScene() {
   if (stepCount == 0) {
     for (int i = 0; i < GRID_H; i ++) {
       if (sceneState.activePattern[i / 8] & (1 << (i % 8)))
-	noteOff(i);
+	noteOff(midi, &allState[i]);
       sceneState.activePattern[i / 8] &= ~(1 << (i % 8));
       int pad = i * GRID_W + sceneState.column;
       if (pc->program.scene[pad / 8] & (1 << (pad % 8)))

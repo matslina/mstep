@@ -28,8 +28,6 @@ private:
   bool sceneModeRequested;
   int stepCount;
   int swingDelay;
-  void noteOff(int patternIndex);
-  void noteOn(int patternIndex);
   void stepPattern(int patternIndex);
 
 public:
