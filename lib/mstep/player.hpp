@@ -23,11 +23,11 @@ private:
   unsigned long int nextEventTime;
   struct pattern_state allState[GRID_H];
   struct scene_state sceneState;
-  int playIndex;
+  unsigned char playIndex;
   bool sceneMode;
   bool sceneModeRequested;
-  int stepCount;
-  int swingDelay;
+  unsigned char stepCount;
+  unsigned char swingDelay;
   void stepPattern(int patternIndex);
 
 public:

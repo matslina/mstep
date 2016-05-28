@@ -7,8 +7,8 @@ static const char *notes[] = {"C", "C#", "D", "D#", "E", "F",
 
 class DisplayWriter {
 private:
-  char row;
-  int length;
+  unsigned char row;
+  unsigned char length;
   Display *display;
   char buf[20];
 

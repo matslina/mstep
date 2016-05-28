@@ -12,8 +12,8 @@ private:
   Control *control;
   ProgramController *pc;
   pattern_t *pattern;
-  int activeRow;
-  int field;
+  char activeRow;
+  char field;
 
 public:
   NoteMode(Grid *grid, DisplayWriter *displayWriter, Control *control,

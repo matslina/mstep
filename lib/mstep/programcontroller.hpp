@@ -27,7 +27,7 @@ private:
 public:
   ProgramController(Grid *grid);
   program_t program;
-  int currentPattern;
+  unsigned char currentPattern;
   char highlightColumn;
   char highlightRow;
   void draw();
