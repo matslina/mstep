@@ -36,8 +36,6 @@ Player::Player(MIDI *midi,
       allState[i].activeNote[j] = -1;
     allState[i].column = 0;
   }
-  for (int i = 0; i < sizeof(sceneState.activePattern); i++)
-    sceneState.activePattern[i] = 0;
   sceneModeRequested = false;
 }
 
