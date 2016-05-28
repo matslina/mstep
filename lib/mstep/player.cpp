@@ -14,7 +14,7 @@ static void noteOn(MIDI *midi,
 		   pattern_t *pattern) {
   for (int i = 0; i < GRID_H; i++) {
     int pad = i * GRID_W + state->column;
-    if (pattern->grid[pad / 8] & (1 << (pad % 8))) {
+    if (pattern->grid[pad >> 3] & (1 << (pad & 7))) {
       midi->noteOn(pattern->channel, pattern->note[i], pattern->velocity[i]);
       state->activeNote[i] = pattern->note[i];
     }
@@ -144,17 +144,17 @@ void Player::tickScene() {
 
   if (stepCount == 0) {
     for (int i = 0; i < GRID_H; i ++) {
-      if (sceneState.activePattern[i / 8] & (1 << (i % 8)))
+      if (sceneState.activePattern[i >> 3] & (1 << (i & 7)))
 	noteOff(midi, &allState[i]);
-      sceneState.activePattern[i / 8] &= ~(1 << (i % 8));
+      sceneState.activePattern[i >> 3] &= ~(1 << (i & 7));
       int pad = i * GRID_W + sceneState.column;
-      if (pc->program.scene[pad / 8] & (1 << (pad % 8)))
-	sceneState.activePattern[i / 8] |= 1 << (i % 8);
+      if (pc->program.scene[pad >> 3] & (1 << (pad & 7)))
+	sceneState.activePattern[i >> 3] |= 1 << (i & 7);
     }
   }
 
   for (int i = 0; i < GRID_H; i ++) {
-    if (sceneState.activePattern[i / 8] & (1 << (i % 8)))
+    if (sceneState.activePattern[i >> 3] & (1 << (i & 7)))
       stepPattern(i);
   }
 
