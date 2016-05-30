@@ -3,13 +3,41 @@
 #include "programcontroller.hpp"
 #include "displaywriter.hpp"
 #include "mode.hpp"
-#include "patternmode.hpp"
-#include "notemode.hpp"
-#include "tempomode.hpp"
 #include "storagecontroller.hpp"
 #include "loadmode.hpp"
 #include "savemode.hpp"
 #include "player.hpp"
+#include "menu.hpp"
+
+MenuItem patternItems[] = {{.name = "PATTERN",
+			    .fun = &ProgramController::modPattern,
+			    .type = ItemTypeInteger},
+			   {.name = "SWING",
+			    .fun = &ProgramController::modSwing,
+			    .type = ItemTypeInteger},
+			   {.name = "CHANNEL",
+			    .fun = &ProgramController::modChannel,
+			    .type = ItemTypeInteger}};
+
+Menu patternMenu = {.item = patternItems, .n = 3,
+		    .rowSelectRequired = false};
+
+MenuItem noteItems[] = {{.name = "NOTE",
+			 .fun = &ProgramController::modNote,
+			 .type = ItemTypeNote},
+			{.name = "VELOCITY",
+			 .fun = &ProgramController::modVelocity,
+			 .type = ItemTypeInteger}};
+
+Menu noteMenu = {.item = noteItems, .n = 3,
+		 .rowSelectRequired = true};
+
+MenuItem tempoItems[] = {{.name = "TEMPO",
+			  .fun = &ProgramController::modTempo,
+			  .type = ItemTypeInteger}};
+
+Menu tempoMenu = {.item = tempoItems, .n = 1,
+		  .rowSelectRequired = false};
 
 
 void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
@@ -25,9 +53,9 @@ void mstep_run(Grid *grid, Control *control, Display *display, MIDI *midi,
 
   Player player = Player(midi, sleep, time, &programController);
 
-  TempoMode tempoMode = TempoMode(&displayWriter, control, grid, &programController);
-  PatternMode patternMode = PatternMode(&displayWriter, control, grid, &programController);
-  NoteMode noteMode = NoteMode(&displayWriter, control, grid, &programController);
+  MenuMode tempoMode = MenuMode(&tempoMenu, &programController, &displayWriter, control, grid);
+  MenuMode patternMode = MenuMode(&patternMenu, &programController, &displayWriter, control, grid);
+  MenuMode noteMode = MenuMode(&noteMenu, &programController, &displayWriter, control, grid);
   LoadMode loadMode = LoadMode(&displayWriter, control, &storageController, &programController);
   SaveMode saveMode = SaveMode(&displayWriter, control, &storageController, &programController);
 
