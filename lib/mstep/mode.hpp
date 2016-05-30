@@ -66,9 +66,9 @@ public:
       int fieldValue = (patternController->*fieldFun[i])(mod);
       displayWriter->clear()->string(fieldName[i])->cr()->string("  ");
       if (fieldType[i] == FieldTypeInteger)
-	displayWriter->integer(value);
+	displayWriter->integer(fieldValue);
       else
-	displayWriter->note(value);
+	displayWriter->note(fieldValue);
       displayWriter->cr();
     }
 
