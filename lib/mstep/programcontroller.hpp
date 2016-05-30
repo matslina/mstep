@@ -1,19 +1,20 @@
 #pragma once
 
+#include <stdint.h>
 #include "util.hpp"
 
 typedef struct pattern_t {
   char grid[GRID_BYTES];
-  char note[MSTEP_GRID_HEIGHT];
-  char velocity[MSTEP_GRID_HEIGHT];
-  char channel;
+  unsigned char note[MSTEP_GRID_HEIGHT];
+  unsigned char velocity[MSTEP_GRID_HEIGHT];
+  unsigned char channel;
 } pattern_t;
 
 typedef struct program_t {
   pattern_t pattern[MSTEP_GRID_HEIGHT];
   char scene[GRID_BYTES];
   unsigned char tempo;
-  char swing;
+  unsigned char swing;
 } program_t;
 
 class ProgramController {
@@ -31,12 +32,12 @@ public:
   char highlightColumn;
   char selectedRow;
   void draw();
-  char modPattern(char delta);
-  char modTempo(char delta);
-  char modSwing(char delta);
-  char modChannel(char delta);
-  char modNote(char delta);
-  char modVelocity(char delta);
+  unsigned char modPattern(char delta);
+  unsigned char modTempo(char delta);
+  unsigned char modSwing(char delta);
+  unsigned char modChannel(char delta);
+  unsigned char modNote(char delta);
+  unsigned char modVelocity(char delta);
   void copy();
   void paste();
   void clear();

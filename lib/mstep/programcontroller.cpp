@@ -2,6 +2,11 @@
 #include "util.hpp"
 #include "programcontroller.hpp"
 
+static char mod(unsigned char *field, char delta, unsigned char min, unsigned char max) {
+  *field += MIN(max, MAX(min, *field + delta));
+  return *field;
+}
+
 ProgramController::ProgramController(Grid *grid) {
   this->grid = grid;
 
@@ -41,9 +46,9 @@ ProgramController::ProgramController(Grid *grid) {
   sceneMode = false;
 }
 
-char ProgramController::modPattern(char delta) {
+unsigned char ProgramController::modPattern(char delta) {
   if (delta) {
-    currentPattern = MIN(GRID_H - 1, MAX(0, currentPattern + delta));
+    mod(&currentPattern, delta, 0, GRID_H-1);
     current = &program.pattern[currentPattern];
     currentGrid = current->grid;
     highlightColumn = -1;
@@ -74,19 +79,16 @@ void ProgramController::draw() {
   toggleRow(currentGrid, selectedRow);
 }
 
-char ProgramController::modTempo(char delta) {
-  program.tempo = MIN(240, MAX(0, program.tempo + delta));
-  return program.tempo;
+unsigned char ProgramController::modTempo(char delta) {
+  return mod(&program.tempo, delta, 0, 240);
 }
 
-char ProgramController::modSwing(char delta) {
-  program.swing = MIN(75, MAX(50, program.swing + delta));
-  return program.swing;
+unsigned char ProgramController::modSwing(char delta) {
+  return mod(&program.swing, delta, 50, 75);
 }
 
-char ProgramController::modChannel(char delta) {
-  current->channel = MIN(16, MAX(1, current->channel + delta));
-  return current->channel;
+unsigned char ProgramController::modChannel(char delta) {
+  return mod(&current->channel, delta, 1, 16);
 }
 
 void ProgramController::copy() {
@@ -127,12 +129,10 @@ void ProgramController::toggleSceneMode() {
   draw();
 }
 
-char ProgramController::modNote(char delta) {
-  current->note[selectedRow] = MIN(127, MAX(0, current->note[selectedRow] + delta));
-  return current->note[selectedRow];
+unsigned char ProgramController::modNote(char delta) {
+  return mod(&current->note[selectedRow], delta, 0, 127);
 }
 
-char ProgramController::modVelocity(char delta) {
-  current->velocity[selectedRow] = MIN(127, MAX(0, current->velocity[selectedRow] + delta));
-  return current->velocity[selectedRow];
+unsigned char ProgramController::modVelocity(char delta) {
+  return mod(&current->velocity[selectedRow], delta, 0, 127);
 }

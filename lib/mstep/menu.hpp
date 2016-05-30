@@ -9,7 +9,7 @@ enum ItemType {ItemTypeInteger, ItemTypeNote};
 
 typedef struct MenuItem {
   const char *name;
-  char (ProgramController::*fun)(char);
+  unsigned char (ProgramController::*fun)(char);
   ItemType type;
 } MenuItem;
 
