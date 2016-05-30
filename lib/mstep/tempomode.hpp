@@ -12,6 +12,7 @@ static const char *tmodeFieldName[] = \
 static char (ProgramController::*tmodeFieldFun[])(char) = \
   {&ProgramController::modTempo};
 
+static FieldType tmodeFieldType[] = {FieldTypeInteger};
 
 class TempoMode : public MultiFieldMode {
 public:
@@ -23,6 +24,7 @@ public:
     numFields = 1;
     fieldName = tmodeFieldName;
     fieldFun = tmodeFieldFun;
+    fieldType = tmodeFieldType;
     rowSelectRequired = false;
   }
 };

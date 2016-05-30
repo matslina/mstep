@@ -13,6 +13,8 @@ static char (ProgramController::*nmodeFieldFun[])(char) = \
   {&ProgramController::modNote,
    &ProgramController::modVelocity};
 
+static FieldType nmodeFieldType[] = {FieldTypeNote, FieldTypeInteger};
+
 class NoteMode : public MultiFieldMode {
 public:
   NoteMode(DisplayWriter *displayWriter, Control *control, Grid *grid,
@@ -24,6 +26,7 @@ public:
     numFields = 2;
     fieldName = nmodeFieldName;
     fieldFun = nmodeFieldFun;
+    fieldType = nmodeFieldType;
     rowSelectRequired = true;;
   }
 };

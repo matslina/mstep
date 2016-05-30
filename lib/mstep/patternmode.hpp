@@ -15,6 +15,7 @@ static char (ProgramController::*pmodeFieldFun[])(char) = \
    &ProgramController::modSwing,
    &ProgramController::modChannel};
 
+static FieldType pmodeFieldType[] = {FieldTypeInteger, FieldTypeInteger, FieldTypeInteger};
 
 class PatternMode : public MultiFieldMode {
 public:
@@ -26,6 +27,7 @@ public:
     numFields = 3;
     fieldName = pmodeFieldName;
     fieldFun = pmodeFieldFun;
+    fieldType = pmodeFieldType;
     rowSelectRequired = false;
   }
 };

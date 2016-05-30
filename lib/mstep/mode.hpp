@@ -7,6 +7,8 @@ public:
   virtual bool tick() = 0;
 };
 
+enum FieldType {FieldTypeInteger, FieldTypeNote};
+
 class MultiFieldMode : public Mode {
 private:
   char i;
@@ -19,6 +21,7 @@ protected:
   char numFields;
   const char **fieldName;
   char (ProgramController::**fieldFun)(char);
+  FieldType *fieldType;
   bool rowSelectRequired;
 
 public:
@@ -59,8 +62,14 @@ public:
     }
 
     int mod = control->getMod();
-    if (mod || updateDisplay)
-      displayWriter->clear()->namedInteger(fieldName[i], (patternController->*fieldFun[i])(mod));
+    if (mod || updateDisplay) {
+      displayWriter->clear()->string(fieldName[i])->cr()->string("  ");
+      if (fieldType[i] == FieldTypeInteger)
+	displayWriter->integer((patternController->*fieldFun[i])(mod));
+      else
+	displayWriter->note((patternController->*fieldFun[i])(mod));
+      displayWriter->cr();
+    }
 
     return true;
   }
