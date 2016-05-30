@@ -30,7 +30,6 @@ public:
   bool equals(const char *s) {
     if (!memcmp(s, buf, w * h))
       return true;
-    fprintf(stderr, buf);
     return false;
   }
 
@@ -104,25 +103,25 @@ TEST_CASE("Notes are written correctly", "[DisplayWriter]") {
 
   // all notes and all octaves
   writer.note(0)->note(13)->cr()->note(26)->note(39)->cr();
-  REQUIRE(display.equals("C-2 (0)C#-1 (13)"
-			 "D0 (26)D#1 (39) "));
+  REQUIRE(display.equals("C0 (0)C#1 (13)  "
+			 "D2 (26)D#3 (39) "));
   writer.clear();
   writer.note(52)->note(65)->cr()->note(78)->note(91)->cr();
-  REQUIRE(display.equals("E2 (52)F3 (65)  "
-			 "F#4 (78)G5 (91) "));
+  REQUIRE(display.equals("E4 (52)F5 (65)  "
+			 "F#6 (78)G7 (91) "));
 
   // notes that feel like potential edge cases
   writer.clear()->note(11)->note(12)->cr()->note(13)->cr();
-  REQUIRE(display.equals("B-2 (11)C-1 (12)"
-			 "C#-1 (13)       "));
+  REQUIRE(display.equals("B0 (11)C1 (12)  "
+			 "C#1 (13)        "));
   writer.clear()->note(23)->note(24)->cr()->note(25)->cr();
-  REQUIRE(display.equals("B-1 (23)C0 (24) "
-			 "C#0 (25)        "));
+  REQUIRE(display.equals("B1 (23)C2 (24)  "
+			 "C#2 (25)        "));
 
   // this one overflows the first row.
   // TODO: handle overflows for real
   writer.clear()->note(126)->note(127)->cr();
-  REQUIRE(display.equals("F#8 (126)G8 (127"
+  REQUIRE(display.equals("F#10 (126)G10 (1"
 			 "                "));
 }
 
@@ -140,7 +139,7 @@ TEST_CASE("Nothing is written unless cr() is invoked", "[DisplayWriter]") {
   REQUIRE(display.equals("                "
 			 "                "));
   writer.cr();
-  REQUIRE(display.equals("45derpC3 (60)   "
+  REQUIRE(display.equals("45derpC5 (60)   "
 			 "                "));
 
   // DisplayWriter.namedInteger() is an exception, since it writes
@@ -153,8 +152,8 @@ TEST_CASE("Types can be mixed", "[DisplayWriter]") {
 
   writer.integer(0)->note(0)->string("0zero")->integer(123)->cr();
   writer.note(47)->integer(47)->string("4477")->cr();
-  REQUIRE(display.equals("0C-2 (0)0zero123"
-			 "B1 (47)474477   "));
+  REQUIRE(display.equals("0C0 (0)0zero123 "
+			 "B3 (47)474477   "));
 
 }
 
