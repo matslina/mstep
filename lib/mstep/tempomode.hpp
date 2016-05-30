@@ -15,12 +15,14 @@ static char (ProgramController::*tmodeFieldFun[])(char) = \
 
 class TempoMode : public MultiFieldMode {
 public:
-  TempoMode(DisplayWriter *displayWriter, Control *control, ProgramController *pc) {
+  TempoMode(DisplayWriter *displayWriter, Control *control, Grid *grid, ProgramController *pc) {
     this->displayWriter = displayWriter;
     this->control = control;
     this->patternController = pc;
+    this->grid = grid;
     numFields = 1;
     fieldName = tmodeFieldName;
     fieldFun = tmodeFieldFun;
+    rowSelectRequired = false;
   }
 };

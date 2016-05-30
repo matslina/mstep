@@ -37,7 +37,7 @@ ProgramController::ProgramController(Grid *grid) {
   current = &program.pattern[0];
   currentGrid = current->grid;
   highlightColumn = -1;
-  highlightRow = -1;
+  selectedRow = -1;
   sceneMode = false;
 }
 
@@ -66,12 +66,12 @@ static void toggleCol(char *grid, unsigned int col) {
 
 void ProgramController::draw() {
   toggleCol(currentGrid, highlightColumn);
-  toggleRow(currentGrid, highlightRow);
+  toggleRow(currentGrid, selectedRow);
 
   grid->draw(currentGrid);
 
   toggleCol(currentGrid, highlightColumn);
-  toggleRow(currentGrid, highlightRow);
+  toggleRow(currentGrid, selectedRow);
 }
 
 char ProgramController::modTempo(char delta) {
@@ -123,6 +123,16 @@ void ProgramController::toggleSceneMode() {
   else
     currentGrid = current->grid;
   highlightColumn = -1;
-  highlightRow = -1;
+  selectedRow = -1;
   draw();
+}
+
+char ProgramController::modNote(char delta) {
+  current->note[selectedRow] = MIN(127, MAX(0, current->note[selectedRow] + delta));
+  return current->note[selectedRow];
+}
+
+char ProgramController::modVelocity(char delta) {
+  current->velocity[selectedRow] = MIN(127, MAX(0, current->velocity[selectedRow] + delta));
+  return current->velocity[selectedRow];
 }

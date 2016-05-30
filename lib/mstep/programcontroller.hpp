@@ -29,12 +29,14 @@ public:
   program_t program;
   unsigned char currentPattern;
   char highlightColumn;
-  char highlightRow;
+  char selectedRow;
   void draw();
   char modPattern(char delta);
   char modTempo(char delta);
   char modSwing(char delta);
   char modChannel(char delta);
+  char modNote(char delta);
+  char modVelocity(char delta);
   void copy();
   void paste();
   void clear();

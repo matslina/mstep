@@ -18,12 +18,14 @@ static char (ProgramController::*pmodeFieldFun[])(char) = \
 
 class PatternMode : public MultiFieldMode {
 public:
-  PatternMode(DisplayWriter *displayWriter, Control *control, ProgramController *pc) {
+  PatternMode(DisplayWriter *displayWriter, Control *control, Grid *grid, ProgramController *pc) {
     this->displayWriter = displayWriter;
     this->control = control;
+    this->grid = grid;
     this->patternController = pc;
     numFields = 3;
     fieldName = pmodeFieldName;
     fieldFun = pmodeFieldFun;
+    rowSelectRequired = false;
   }
 };
