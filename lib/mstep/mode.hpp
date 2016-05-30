@@ -63,11 +63,12 @@ public:
 
     int mod = control->getMod();
     if (mod || updateDisplay) {
+      int fieldValue = (patternController->*fieldFun[i])(mod);
       displayWriter->clear()->string(fieldName[i])->cr()->string("  ");
       if (fieldType[i] == FieldTypeInteger)
-	displayWriter->integer((patternController->*fieldFun[i])(mod));
+	displayWriter->integer(value);
       else
-	displayWriter->note((patternController->*fieldFun[i])(mod));
+	displayWriter->note(value);
       displayWriter->cr();
     }
 
